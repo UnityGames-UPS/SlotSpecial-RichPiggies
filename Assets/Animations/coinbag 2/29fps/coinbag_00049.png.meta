@@ -1,0 +1,1508 @@
+fileFormatVersion: 2
+guid: 11080ff1bfcf540ca90091070b2db8e1
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5991310760986308401
+    second: coinbag_00049_0
+  - first:
+      213: 1016595039695571175
+    second: coinbag_00049_1
+  - first:
+      213: -4789721084726464708
+    second: coinbag_00049_2
+  - first:
+      213: 7081845916598181983
+    second: coinbag_00049_3
+  - first:
+      213: 6348045151405059729
+    second: coinbag_00049_4
+  - first:
+      213: -5843245629983407067
+    second: coinbag_00049_5
+  - first:
+      213: 943399658911623086
+    second: coinbag_00049_6
+  - first:
+      213: 2810969371028357752
+    second: coinbag_00049_7
+  - first:
+      213: -5346034237263346657
+    second: coinbag_00049_8
+  - first:
+      213: 7141110489107370108
+    second: coinbag_00049_9
+  - first:
+      213: -9003934365943035596
+    second: coinbag_00049_10
+  - first:
+      213: -652139819287333168
+    second: coinbag_00049_11
+  - first:
+      213: -1185648358357223014
+    second: coinbag_00049_12
+  - first:
+      213: 505716757372454154
+    second: coinbag_00049_13
+  - first:
+      213: -3416933683406333207
+    second: coinbag_00049_14
+  - first:
+      213: -1122902609022766789
+    second: coinbag_00049_15
+  - first:
+      213: -4810827131224181013
+    second: coinbag_00049_16
+  - first:
+      213: 2898561454403777077
+    second: coinbag_00049_17
+  - first:
+      213: -69107658146885968
+    second: coinbag_00049_18
+  - first:
+      213: 7624349156716378395
+    second: coinbag_00049_19
+  - first:
+      213: -1799542632501674371
+    second: coinbag_00049_20
+  - first:
+      213: 416051046866199568
+    second: coinbag_00049_21
+  - first:
+      213: -4929361107640466543
+    second: coinbag_00049_22
+  - first:
+      213: -4735788620956755947
+    second: coinbag_00049_23
+  - first:
+      213: 8687580885463262352
+    second: coinbag_00049_24
+  - first:
+      213: -4923424827723242535
+    second: coinbag_00049_25
+  - first:
+      213: -9008562253417147286
+    second: coinbag_00049_26
+  - first:
+      213: 884110873530892052
+    second: coinbag_00049_27
+  - first:
+      213: -4279200700234921130
+    second: coinbag_00049_28
+  - first:
+      213: -8461637693167734690
+    second: coinbag_00049_29
+  - first:
+      213: -408387757441055778
+    second: coinbag_00049_30
+  - first:
+      213: -7947723078839853022
+    second: coinbag_00049_31
+  - first:
+      213: -2744629937490130978
+    second: coinbag_00049_32
+  - first:
+      213: -4198885191067780195
+    second: coinbag_00049_33
+  - first:
+      213: -5935304159173447085
+    second: coinbag_00049_34
+  - first:
+      213: 3178856779565421293
+    second: coinbag_00049_35
+  - first:
+      213: 1476396254044030871
+    second: coinbag_00049_36
+  - first:
+      213: -1691001546615996429
+    second: coinbag_00049_37
+  - first:
+      213: 2268361064535654913
+    second: coinbag_00049_38
+  - first:
+      213: -4816671725500301974
+    second: coinbag_00049_39
+  - first:
+      213: 6495306497743260004
+    second: coinbag_00049_40
+  - first:
+      213: 7096887498635994483
+    second: coinbag_00049_41
+  - first:
+      213: -2515938818560525867
+    second: coinbag_00049_42
+  - first:
+      213: -5108891550602999429
+    second: coinbag_00049_43
+  - first:
+      213: 4249316911371695241
+    second: coinbag_00049_44
+  - first:
+      213: 6428259868897142218
+    second: coinbag_00049_45
+  - first:
+      213: -2008632644887888820
+    second: coinbag_00049_46
+  - first:
+      213: 4839485347365659206
+    second: coinbag_00049_47
+  - first:
+      213: -9045210508489056346
+    second: coinbag_00049_48
+  - first:
+      213: 4606635487283038104
+    second: coinbag_00049_49
+  - first:
+      213: -3247326258413656831
+    second: coinbag_00049_50
+  - first:
+      213: 7380537119150490288
+    second: coinbag_00049_51
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: coinbag_00049_0
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 271
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc09f603b969adca0800000000000000
+      internalID: -5991310760986308401
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_1
+      rect:
+        serializedVersion: 2
+        x: 194
+        y: 263
+        width: 11
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7e88a7d6dcbab1e00800000000000000
+      internalID: 1016595039695571175
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_2
+      rect:
+        serializedVersion: 2
+        x: 89
+        y: 232
+        width: 12
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c3f2eabec0e778db0800000000000000
+      internalID: -4789721084726464708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_3
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 243
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f50a2e40755c74260800000000000000
+      internalID: 7081845916598181983
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_4
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 244
+        width: 14
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19ea3ab8e69c81850800000000000000
+      internalID: 6348045151405059729
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_5
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 242
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5244c71fe0f98eea0800000000000000
+      internalID: -5843245629983407067
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_6
+      rect:
+        serializedVersion: 2
+        x: 184
+        y: 240
+        width: 10
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea7e6aecdf0a71d00800000000000000
+      internalID: 943399658911623086
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_7
+      rect:
+        serializedVersion: 2
+        x: 218
+        y: 225
+        width: 17
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 87206a2ffb1920720800000000000000
+      internalID: 2810969371028357752
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_8
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 194
+        width: 55
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f1487da8f221fc5b0800000000000000
+      internalID: -5346034237263346657
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_9
+      rect:
+        serializedVersion: 2
+        x: 156
+        y: 227
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c709f0597225a1360800000000000000
+      internalID: 7141110489107370108
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_10
+      rect:
+        serializedVersion: 2
+        x: 170
+        y: 211
+        width: 27
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 439880926699b0380800000000000000
+      internalID: -9003934365943035596
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_11
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 233
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0d6bd7f1a4223f6f0800000000000000
+      internalID: -652139819287333168
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_12
+      rect:
+        serializedVersion: 2
+        x: 83
+        y: 224
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a99b793991bbb8fe0800000000000000
+      internalID: -1185648358357223014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_13
+      rect:
+        serializedVersion: 2
+        x: 137
+        y: 215
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a05c52026baa40700800000000000000
+      internalID: 505716757372454154
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_14
+      rect:
+        serializedVersion: 2
+        x: 203
+        y: 211
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ea9f7b2bec9490d0800000000000000
+      internalID: -3416933683406333207
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_15
+      rect:
+        serializedVersion: 2
+        x: 235
+        y: 211
+        width: 17
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b31b6d7c606aa60f0800000000000000
+      internalID: -1122902609022766789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_16
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 164
+        width: 41
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be6329786328c3db0800000000000000
+      internalID: -4810827131224181013
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_17
+      rect:
+        serializedVersion: 2
+        x: 150
+        y: 195
+        width: 25
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 53270691942c93820800000000000000
+      internalID: 2898561454403777077
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_18
+      rect:
+        serializedVersion: 2
+        x: 181
+        y: 204
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0be45e873fa7a0ff0800000000000000
+      internalID: -69107658146885968
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_19
+      rect:
+        serializedVersion: 2
+        x: 188
+        y: 193
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b19f0a999212fc960800000000000000
+      internalID: 7624349156716378395
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_20
+      rect:
+        serializedVersion: 2
+        x: 223
+        y: 187
+        width: 12
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d7ef097928db607e0800000000000000
+      internalID: -1799542632501674371
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_21
+      rect:
+        serializedVersion: 2
+        x: 258
+        y: 195
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 014a3e8093c16c500800000000000000
+      internalID: 416051046866199568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_22
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 65
+        width: 179
+        height: 129
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 193c6718034679bb0800000000000000
+      internalID: -4929361107640466543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_23
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 177
+        width: 18
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 518198c2759174eb0800000000000000
+      internalID: -4735788620956755947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_24
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 179
+        width: 17
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 094e28b59cc709870800000000000000
+      internalID: 8687580885463262352
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_25
+      rect:
+        serializedVersion: 2
+        x: 257
+        y: 169
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d3a731643b7cabb0800000000000000
+      internalID: -4923424827723242535
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_26
+      rect:
+        serializedVersion: 2
+        x: 25
+        y: 167
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6414142c582bf280800000000000000
+      internalID: -9008562253417147286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_27
+      rect:
+        serializedVersion: 2
+        x: 233
+        y: 155
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41f7edeb72ef44c00800000000000000
+      internalID: 884110873530892052
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_28
+      rect:
+        serializedVersion: 2
+        x: 246
+        y: 166
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 65b05e3a2a93d94c0800000000000000
+      internalID: -4279200700234921130
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_29
+      rect:
+        serializedVersion: 2
+        x: 260
+        y: 148
+        width: 27
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e507ea88959329a80800000000000000
+      internalID: -8461637693167734690
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_30
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 137
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed38b139f7d155af0800000000000000
+      internalID: -408387757441055778
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_31
+      rect:
+        serializedVersion: 2
+        x: 254
+        y: 143
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 220a398f7f304b190800000000000000
+      internalID: -7947723078839853022
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_32
+      rect:
+        serializedVersion: 2
+        x: 43
+        y: 121
+        width: 14
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed78fff0d9d19e9d0800000000000000
+      internalID: -2744629937490130978
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_33
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 123
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9bb1c55a209ab5c0800000000000000
+      internalID: -4198885191067780195
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_34
+      rect:
+        serializedVersion: 2
+        x: 28
+        y: 107
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3527196505091ada0800000000000000
+      internalID: -5935304159173447085
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_35
+      rect:
+        serializedVersion: 2
+        x: 40
+        y: 100
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de2d6d116619d1c20800000000000000
+      internalID: 3178856779565421293
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_36
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 97
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 797030e12963d7410800000000000000
+      internalID: 1476396254044030871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_37
+      rect:
+        serializedVersion: 2
+        x: 55
+        y: 94
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ff315b7d0b5888e0800000000000000
+      internalID: -1691001546615996429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_38
+      rect:
+        serializedVersion: 2
+        x: 275
+        y: 95
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10289f1be56da7f10800000000000000
+      internalID: 2268361064535654913
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_39
+      rect:
+        serializedVersion: 2
+        x: 280
+        y: 88
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6df2e1e59eb72db0800000000000000
+      internalID: -4816671725500301974
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_40
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 86
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 469064998d6f32a50800000000000000
+      internalID: 6495306497743260004
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_41
+      rect:
+        serializedVersion: 2
+        x: 254
+        y: 82
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 375eb1f34953d7260800000000000000
+      internalID: 7096887498635994483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_42
+      rect:
+        serializedVersion: 2
+        x: 56
+        y: 51
+        width: 35
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d9751b79f6951dd0800000000000000
+      internalID: -2515938818560525867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_43
+      rect:
+        serializedVersion: 2
+        x: 248
+        y: 67
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b79405ae3329919b0800000000000000
+      internalID: -5108891550602999429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_44
+      rect:
+        serializedVersion: 2
+        x: 91
+        y: 48
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 984be50973b98fa30800000000000000
+      internalID: 4249316911371695241
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_45
+      rect:
+        serializedVersion: 2
+        x: 120
+        y: 49
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac56389da44c53950800000000000000
+      internalID: 6428259868897142218
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_46
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 56
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4c343d6047ef14e0800000000000000
+      internalID: -2008632644887888820
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_47
+      rect:
+        serializedVersion: 2
+        x: 178
+        y: 40
+        width: 14
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6422071684e492340800000000000000
+      internalID: 4839485347365659206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_48
+      rect:
+        serializedVersion: 2
+        x: 149
+        y: 32
+        width: 16
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6af11e257f4f87280800000000000000
+      internalID: -9045210508489056346
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_49
+      rect:
+        serializedVersion: 2
+        x: 221
+        y: 44
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 897c635919e0eef30800000000000000
+      internalID: 4606635487283038104
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_50
+      rect:
+        serializedVersion: 2
+        x: 90
+        y: 31
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 105a47919fd2fe2d0800000000000000
+      internalID: -3247326258413656831
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: coinbag_00049_51
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 26
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b2cc86f76fec6660800000000000000
+      internalID: 7380537119150490288
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      coinbag_00049_0: -5991310760986308401
+      coinbag_00049_1: 1016595039695571175
+      coinbag_00049_10: -9003934365943035596
+      coinbag_00049_11: -652139819287333168
+      coinbag_00049_12: -1185648358357223014
+      coinbag_00049_13: 505716757372454154
+      coinbag_00049_14: -3416933683406333207
+      coinbag_00049_15: -1122902609022766789
+      coinbag_00049_16: -4810827131224181013
+      coinbag_00049_17: 2898561454403777077
+      coinbag_00049_18: -69107658146885968
+      coinbag_00049_19: 7624349156716378395
+      coinbag_00049_2: -4789721084726464708
+      coinbag_00049_20: -1799542632501674371
+      coinbag_00049_21: 416051046866199568
+      coinbag_00049_22: -4929361107640466543
+      coinbag_00049_23: -4735788620956755947
+      coinbag_00049_24: 8687580885463262352
+      coinbag_00049_25: -4923424827723242535
+      coinbag_00049_26: -9008562253417147286
+      coinbag_00049_27: 884110873530892052
+      coinbag_00049_28: -4279200700234921130
+      coinbag_00049_29: -8461637693167734690
+      coinbag_00049_3: 7081845916598181983
+      coinbag_00049_30: -408387757441055778
+      coinbag_00049_31: -7947723078839853022
+      coinbag_00049_32: -2744629937490130978
+      coinbag_00049_33: -4198885191067780195
+      coinbag_00049_34: -5935304159173447085
+      coinbag_00049_35: 3178856779565421293
+      coinbag_00049_36: 1476396254044030871
+      coinbag_00049_37: -1691001546615996429
+      coinbag_00049_38: 2268361064535654913
+      coinbag_00049_39: -4816671725500301974
+      coinbag_00049_4: 6348045151405059729
+      coinbag_00049_40: 6495306497743260004
+      coinbag_00049_41: 7096887498635994483
+      coinbag_00049_42: -2515938818560525867
+      coinbag_00049_43: -5108891550602999429
+      coinbag_00049_44: 4249316911371695241
+      coinbag_00049_45: 6428259868897142218
+      coinbag_00049_46: -2008632644887888820
+      coinbag_00049_47: 4839485347365659206
+      coinbag_00049_48: -9045210508489056346
+      coinbag_00049_49: 4606635487283038104
+      coinbag_00049_5: -5843245629983407067
+      coinbag_00049_50: -3247326258413656831
+      coinbag_00049_51: 7380537119150490288
+      coinbag_00049_6: 943399658911623086
+      coinbag_00049_7: 2810969371028357752
+      coinbag_00049_8: -5346034237263346657
+      coinbag_00049_9: 7141110489107370108
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

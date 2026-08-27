@@ -1,0 +1,624 @@
+fileFormatVersion: 2
+guid: 349a40644f98b414eb57fd7749190249
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 6243580602980989992
+    second: Chinese_New_Year_BTN_10_0
+  - first:
+      213: 8235205534915461429
+    second: Chinese_New_Year_BTN_10_1
+  - first:
+      213: 2972154125747044275
+    second: Chinese_New_Year_BTN_10_2
+  - first:
+      213: -3271204741608544272
+    second: Chinese_New_Year_BTN_10_3
+  - first:
+      213: 8696737224478983862
+    second: Chinese_New_Year_BTN_10_4
+  - first:
+      213: -1820882423424197033
+    second: Chinese_New_Year_BTN_10_5
+  - first:
+      213: -1692139575314199868
+    second: Chinese_New_Year_BTN_10_6
+  - first:
+      213: -2486335613201307512
+    second: Chinese_New_Year_BTN_10_7
+  - first:
+      213: 4604484966582739137
+    second: Chinese_New_Year_BTN_10_8
+  - first:
+      213: -6074278648844504177
+    second: Chinese_New_Year_BTN_10_9
+  - first:
+      213: -6511592037812486039
+    second: Chinese_New_Year_BTN_10_10
+  - first:
+      213: 6988258911703208409
+    second: Chinese_New_Year_BTN_10_11
+  - first:
+      213: 6549628893174074199
+    second: Chinese_New_Year_BTN_10_12
+  - first:
+      213: -1383990949439347749
+    second: Chinese_New_Year_BTN_10_13
+  - first:
+      213: -7944015310007527543
+    second: Chinese_New_Year_BTN_10_14
+  - first:
+      213: 6342992738927527287
+    second: Chinese_New_Year_BTN_10_15
+  - first:
+      213: -4365267773544142165
+    second: Chinese_New_Year_BTN_10_16
+  - first:
+      213: 8340935968201929120
+    second: Chinese_New_Year_BTN_10_17
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_0
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 431
+        width: 118
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82c733f7a77a5a650800000000000000
+      internalID: 6243580602980989992
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_1
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 409
+        width: 118
+        height: 39
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 53187f05dc3594270800000000000000
+      internalID: 8235205534915461429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_2
+      rect:
+        serializedVersion: 2
+        x: 349
+        y: 319
+        width: 162
+        height: 162
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3bf3dd22e663f3920800000000000000
+      internalID: 2972154125747044275
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_3
+      rect:
+        serializedVersion: 2
+        x: 625
+        y: 328
+        width: 144
+        height: 144
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0f769dc7e985a92d0800000000000000
+      internalID: -3271204741608544272
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_4
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 388
+        width: 65
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6b68cf9ad6401b870800000000000000
+      internalID: 8696737224478983862
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_5
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 366
+        width: 57
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75e5c06551deab6e0800000000000000
+      internalID: -1820882423424197033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_6
+      rect:
+        serializedVersion: 2
+        x: 134
+        y: 367
+        width: 118
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4ca440785005488e0800000000000000
+      internalID: -1692139575314199868
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_7
+      rect:
+        serializedVersion: 2
+        x: 134
+        y: 346
+        width: 118
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 888abb6dee2ce7dd0800000000000000
+      internalID: -2486335613201307512
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_8
+      rect:
+        serializedVersion: 2
+        x: 134
+        y: 324
+        width: 118
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c06ac67eaa66ef30800000000000000
+      internalID: 4604484966582739137
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_9
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 164
+        width: 118
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8332e470c3d3bba0800000000000000
+      internalID: -6074278648844504177
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_10
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 143
+        width: 118
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 960ccef9a8d22a5a0800000000000000
+      internalID: -6511592037812486039
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_11
+      rect:
+        serializedVersion: 2
+        x: 349
+        y: 53
+        width: 162
+        height: 161
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d1178e64784bf060800000000000000
+      internalID: 6988258911703208409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_12
+      rect:
+        serializedVersion: 2
+        x: 625
+        y: 61
+        width: 144
+        height: 144
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75b8644e6c4f4ea50800000000000000
+      internalID: 6549628893174074199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_13
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 122
+        width: 65
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd3ef4e60931bcce0800000000000000
+      internalID: -1383990949439347749
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_14
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 99
+        width: 57
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9879cbc2a2031c190800000000000000
+      internalID: -7944015310007527543
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_15
+      rect:
+        serializedVersion: 2
+        x: 134
+        y: 100
+        width: 118
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77548a81a46d60850800000000000000
+      internalID: 6342992738927527287
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_16
+      rect:
+        serializedVersion: 2
+        x: 134
+        y: 79
+        width: 118
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: baae07096147b63c0800000000000000
+      internalID: -4365267773544142165
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chinese_New_Year_BTN_10_17
+      rect:
+        serializedVersion: 2
+        x: 134
+        y: 57
+        width: 118
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a174f62215f0c370800000000000000
+      internalID: 8340935968201929120
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Chinese_New_Year_BTN_10_0: 6243580602980989992
+      Chinese_New_Year_BTN_10_1: 8235205534915461429
+      Chinese_New_Year_BTN_10_10: -6511592037812486039
+      Chinese_New_Year_BTN_10_11: 6988258911703208409
+      Chinese_New_Year_BTN_10_12: 6549628893174074199
+      Chinese_New_Year_BTN_10_13: -1383990949439347749
+      Chinese_New_Year_BTN_10_14: -7944015310007527543
+      Chinese_New_Year_BTN_10_15: 6342992738927527287
+      Chinese_New_Year_BTN_10_16: -4365267773544142165
+      Chinese_New_Year_BTN_10_17: 8340935968201929120
+      Chinese_New_Year_BTN_10_2: 2972154125747044275
+      Chinese_New_Year_BTN_10_3: -3271204741608544272
+      Chinese_New_Year_BTN_10_4: 8696737224478983862
+      Chinese_New_Year_BTN_10_5: -1820882423424197033
+      Chinese_New_Year_BTN_10_6: -1692139575314199868
+      Chinese_New_Year_BTN_10_7: -2486335613201307512
+      Chinese_New_Year_BTN_10_8: 4604484966582739137
+      Chinese_New_Year_BTN_10_9: -6074278648844504177
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

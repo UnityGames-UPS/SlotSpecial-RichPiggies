@@ -1,0 +1,18 @@
+{
+    "name": "ProceduralEditor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:4fe65bda782239c4799d7c3591a5f57a"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
