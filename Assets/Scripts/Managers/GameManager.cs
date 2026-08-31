@@ -67,10 +67,10 @@ public class GameManager : MonoBehaviour
         currentBetIndex = playerData.currentBetIndex;
         UpdateBetAmount();
 
-        if (initialMatrix != null && slotView != null)
-        {
-            slotView.SetInitialMatrix(initialMatrix);
-        }
+        // if (initialMatrix != null && slotView != null)
+        // {
+        //     slotView.SetInitialMatrix(initialMatrix);
+        // }
 
         if (wheelController != null && gameConfig.uSpinSegments != null)
         {

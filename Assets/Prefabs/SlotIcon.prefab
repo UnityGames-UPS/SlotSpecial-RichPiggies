@@ -205,7 +205,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 2b5dd2e803b884b44b81085a39bf087e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: ec94e4b1e85e3477aa7e7d36fcb5a2d8, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -293,7 +293,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 9b9665d9fa60b4659a61d05b9dbe25e9, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 657ceb1599fcd4f238b1c13e4ec2cf97, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -322,5 +322,5 @@ MonoBehaviour:
   StartOnAwake: 0
   StartonEnable: 1
   currentAnimationState: 0
-  AnimationSpeed: 70
+  AnimationSpeed: 29
   delayBetweenLoop: 0
