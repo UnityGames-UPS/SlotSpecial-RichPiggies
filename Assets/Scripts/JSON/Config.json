@@ -1,0 +1,664 @@
+{
+  "id": "SL-RP",
+  "bets": [
+    0.01,
+    0.1,
+    1,
+    1.5,
+    2,
+    3
+  ],
+  "name": "Rich Piggies testing",
+  "lines": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    [
+      0,
+      1,
+      2,
+      1,
+      0
+    ],
+    [
+      2,
+      1,
+      0,
+      1,
+      2
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      2,
+      2,
+      1,
+      2,
+      2
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      2,
+      2,
+      2,
+      1
+    ],
+    [
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      2,
+      1,
+      1,
+      1,
+      2
+    ],
+    [
+      1,
+      0,
+      1,
+      2,
+      1
+    ],
+    [
+      1,
+      2,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      2,
+      1,
+      2,
+      1,
+      2
+    ],
+    [
+      0,
+      2,
+      1,
+      0,
+      2
+    ],
+    [
+      2,
+      0,
+      1,
+      2,
+      0
+    ],
+    [
+      1,
+      1,
+      0,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      2,
+      1,
+      1
+    ],
+    [
+      0,
+      2,
+      2,
+      2,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      0,
+      2
+    ],
+    [
+      0,
+      2,
+      0,
+      2,
+      0
+    ],
+    [
+      2,
+      0,
+      2,
+      0,
+      2
+    ],
+    [
+      1,
+      0,
+      2,
+      0,
+      1
+    ],
+    [
+      1,
+      2,
+      0,
+      2,
+      1
+    ]
+  ],
+  "matrix": {
+    "x": 5,
+    "y": 3
+  },
+  "symbols": [
+    {
+      "id": 0,
+      "name": "BusinessPig",
+      "payout": {
+        "3": 20,
+        "4": 125,
+        "5": 200
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 3,
+        "1": 3,
+        "2": 3,
+        "3": 3,
+        "4": 3
+      }
+    },
+    {
+      "id": 1,
+      "name": "LadyPig",
+      "payout": {
+        "3": 15,
+        "4": 60,
+        "5": 125
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 4,
+        "1": 4,
+        "2": 4,
+        "3": 4,
+        "4": 4
+      }
+    },
+    {
+      "id": 2,
+      "name": "BeachPig",
+      "payout": {
+        "3": 15,
+        "4": 40,
+        "5": 100
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 4,
+        "1": 4,
+        "2": 4,
+        "3": 4,
+        "4": 4
+      }
+    },
+    {
+      "id": 3,
+      "name": "DiamondPendant",
+      "payout": {
+        "3": 10,
+        "4": 25,
+        "5": 60
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 5,
+        "1": 5,
+        "2": 5,
+        "3": 5,
+        "4": 5
+      }
+    },
+    {
+      "id": 4,
+      "name": "Yacht",
+      "payout": {
+        "3": 10,
+        "4": 25,
+        "5": 60
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 5,
+        "1": 5,
+        "2": 5,
+        "3": 5,
+        "4": 5
+      }
+    },
+    {
+      "id": 5,
+      "name": "A",
+      "payout": {
+        "3": 10,
+        "4": 25,
+        "5": 60
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 6,
+        "1": 6,
+        "2": 6,
+        "3": 6,
+        "4": 6
+      }
+    },
+    {
+      "id": 6,
+      "name": "K",
+      "payout": {
+        "3": 10,
+        "4": 25,
+        "5": 60
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 6,
+        "1": 6,
+        "2": 6,
+        "3": 6,
+        "4": 6
+      }
+    },
+    {
+      "id": 7,
+      "name": "Q",
+      "payout": {
+        "3": 5,
+        "4": 20,
+        "5": 60
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 7,
+        "1": 7,
+        "2": 7,
+        "3": 7,
+        "4": 7
+      }
+    },
+    {
+      "id": 8,
+      "name": "J",
+      "payout": {
+        "3": 5,
+        "4": 20,
+        "5": 60
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 7,
+        "1": 7,
+        "2": 7,
+        "3": 7,
+        "4": 7
+      }
+    },
+    {
+      "id": 9,
+      "name": "10",
+      "payout": {
+        "3": 5,
+        "4": 20,
+        "5": 60
+      },
+      "useWildSub": true,
+      "reelsInstance": {
+        "0": 7,
+        "1": 7,
+        "2": 7,
+        "3": 7,
+        "4": 7
+      }
+    },
+    {
+      "id": 10,
+      "name": "Wild",
+      "useWildSub": false,
+      "description": "Substitutes for all symbols except Blue Coin, Yellow Coin and Red Coin.",
+      "reelsInstance": {
+        "0": 2,
+        "1": 2,
+        "2": 3,
+        "3": 2,
+        "4": 2
+      }
+    },
+    {
+      "id": 11,
+      "name": "Mystery",
+      "useWildSub": false,
+      "description": "Reveals a random paying symbol or Wild before paylines are evaluated. May additionally reveal a Blue, Yellow or Red Coin overlay.",
+      "reelsInstance": {
+        "0": 3,
+        "1": 4,
+        "2": 4,
+        "3": 4,
+        "4": 3
+      }
+    },
+    {
+      "id": 12,
+      "name": "BlueCoin",
+      "useWildSub": false,
+      "description": "Advances the Blue Pig meter or immediately triggers Blue Free Spins.",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    },
+    {
+      "id": 13,
+      "name": "YellowCoin",
+      "useWildSub": false,
+      "description": "Advances the Yellow Pig jackpot meters or immediately triggers Yellow Free Spins.",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    },
+    {
+      "id": 14,
+      "name": "RedCoin",
+      "useWildSub": false,
+      "description": "Advances the Red Pig Wild meter or immediately triggers Red Free Spins.",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    },
+    {
+      "id": 15,
+      "name": "Mega",
+      "payout": {
+        "1": 5000
+      },
+      "useWildSub": false,
+      "description": "Mega Jackpot Symbol",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    },
+    {
+      "id": 16,
+      "name": "Grand",
+      "payout": {
+        "1": 1000
+      },
+      "useWildSub": false,
+      "description": "Grand Jackpot Symbol",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    },
+    {
+      "id": 17,
+      "name": "Major",
+      "payout": {
+        "1": 200
+      },
+      "useWildSub": false,
+      "description": "Major Jackpot Symbol",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    },
+    {
+      "id": 18,
+      "name": "Maxi",
+      "payout": {
+        "1": 50
+      },
+      "useWildSub": false,
+      "description": "Maxi Jackpot Symbol",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    },
+    {
+      "id": 19,
+      "name": "Minor",
+      "payout": {
+        "1": 20
+      },
+      "useWildSub": false,
+      "description": "Minor Jackpot Symbol",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    },
+    {
+      "id": 20,
+      "name": "Mini",
+      "payout": {
+        "1": 10
+      },
+      "useWildSub": false,
+      "description": "Mini Jackpot Symbol",
+      "reelsInstance": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      }
+    }
+  ],
+  "features": {
+    "redPig": {
+      "maxMeter": 100,
+      "increment": 15,
+      "defaultWilds": 15,
+      "lastIncrement": 25,
+      "wildInstances": {
+        "15": {
+          "0": 3,
+          "1": 3,
+          "2": 3,
+          "3": 3,
+          "4": 3
+        },
+        "30": {
+          "0": 6,
+          "1": 6,
+          "2": 6,
+          "3": 6,
+          "4": 6
+        },
+        "45": {
+          "0": 9,
+          "1": 9,
+          "2": 9,
+          "3": 9,
+          "4": 9
+        },
+        "60": {
+          "0": 12,
+          "1": 12,
+          "2": 12,
+          "3": 12,
+          "4": 12
+        },
+        "75": {
+          "0": 15,
+          "1": 15,
+          "2": 15,
+          "3": 15,
+          "4": 15
+        },
+        "100": {
+          "0": 20,
+          "1": 20,
+          "2": 20,
+          "3": 20,
+          "4": 20
+        }
+      },
+      "freeSpinsCount": 10,
+      "wildCountBuckets": [
+        15,
+        30,
+        45,
+        60,
+        75,
+        100
+      ],
+      "resetAfterFeature": 15,
+      "triggerProbability": 0.5
+    },
+    "bluePig": {
+      "maxMeter": 15,
+      "defaultMeter": 9,
+      "incrementPerCoin": 1,
+      "resetAfterFeature": 9,
+      "triggerProbability": 0.5
+    },
+    "yellowPig": {
+      "maxMeter": 100,
+      "freeSpins": {
+        "jackpotSymbolWeights": {
+          "Maxi": 2,
+          "Mega": 10,
+          "Mini": 30,
+          "Grand": 15,
+          "Major": 18,
+          "Minor": 25
+        },
+        "mysteryRevealsJackpotSymbol": true
+      },
+      "jackpotLevels": {
+        "Maxi": 5,
+        "Mega": 6,
+        "Mini": 2,
+        "Grand": 5,
+        "Major": 4,
+        "Minor": 2
+      },
+      "freeSpinsCount": 8,
+      "triggerProbability": 0.5,
+      "coinAddsBetMultiplier": {
+        "max": 100,
+        "min": 10
+      },
+      "defaultJackpotMultipliers": {
+        "Maxi": 50,
+        "Mega": 5000,
+        "Mini": 10,
+        "Grand": 1000,
+        "Major": 200,
+        "Minor": 20
+      }
+    },
+    "mysteryReveal": {
+      "enabled": true,
+      "symbolWeights": {
+        "10": 13,
+        "A": 12,
+        "J": 13,
+        "K": 12,
+        "Q": 13,
+        "Wild": 5,
+        "Yacht": 10,
+        "LadyPig": 9,
+        "BeachPig": 9,
+        "BusinessPig": 8,
+        "DiamondPendant": 10
+      },
+      "coinOverlayWeights": {
+        "None": 40,
+        "RedCoin": 20,
+        "BlueCoin": 30,
+        "YellowCoin": 10
+      },
+      "coinInsideMysteryProbability": 0.5
+    }
+  },
+  "jackpots": [
+    "Mega",
+    "Grand",
+    "Major",
+    "Maxi",
+    "Minor",
+    "Mini"
+  ],
+  "minMatchCount": 3
+}

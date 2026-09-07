@@ -190,13 +190,17 @@ else if (isWild)
             if (symbolInfo != null && symbolInfo.multipliers != null && symbolInfo.multipliers.Count > 0)
             {
                 List<string> lines = new List<string>();
-                int currentMatch = 5;
 
                 for (int m = 0; m < symbolInfo.multipliers.Count; m++)
                 {
+                    // Real match count from the server payout keys — the jackpot symbols
+                    // pay on a single symbol, so counting down from 5 would be wrong.
+                    int currentMatch = (symbolInfo.matchCounts != null && m < symbolInfo.matchCounts.Count)
+                        ? symbolInfo.matchCounts[m]
+                        : 5 - m;
+
                     double payout = symbolInfo.multipliers[m] * betFactor;
                     lines.Add($"<color=#FFC700>X{currentMatch}</color>   {payout.ToString("0.###")}");
-                    currentMatch--;
                 }
 
                 infoText.text = string.Join("\n", lines);

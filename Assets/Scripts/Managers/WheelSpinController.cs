@@ -64,33 +64,39 @@ public class WheelSpinController : MonoBehaviour
         segmentAngle = 360f / segmentCount;
     }
 
-    public void OverrideSegmentsWithData(List<USpinSegment> serverSegments)
-    {
-        if (serverSegments == null || segments == null) return;
+    // ==========================================================================
+    // [CNY] The USpin bonus wheel has no Rich Piggies equivalent, and the init
+    // payload no longer carries a `uSpin.segments` block, so USpinSegment is gone.
+    // Commented rather than deleted while this controller is still in the scene.
+    // ==========================================================================
+    // public void OverrideSegmentsWithData(List<USpinSegment> serverSegments)
+    // {
+    // if (serverSegments == null || segments == null) return;
+    //
+    // foreach (var serverSeg in serverSegments)
+    // {
+    // if (serverSeg.sliceIndex >= 0 && serverSeg.sliceIndex < segments.Count)
+    // {
+    // var localSeg = segments[serverSeg.sliceIndex];
+    // localSeg.serverIndex = serverSeg.sliceIndex;
+    //
+    // if (serverSeg.type == "MULTIPLIER")
+    // {
+    // localSeg.type = WheelSegmentType.Multiplier;
+    // localSeg.assignedValue = serverSeg.multiplier;
+    // }
+    // else if (serverSeg.type == "FREE_GAMES")
+    // {
+    // localSeg.type = WheelSegmentType.FreeGames;
+    // localSeg.assignedValue = serverSeg.freeGames;
+    // }
+    // }
+    // }
+    //
+    // // Re-align and re-format texts based on the new data
+    // SetupSegmentTexts();
+    // }
 
-        foreach (var serverSeg in serverSegments)
-        {
-            if (serverSeg.sliceIndex >= 0 && serverSeg.sliceIndex < segments.Count)
-            {
-                var localSeg = segments[serverSeg.sliceIndex];
-                localSeg.serverIndex = serverSeg.sliceIndex;
-                
-                if (serverSeg.type == "MULTIPLIER")
-                {
-                    localSeg.type = WheelSegmentType.Multiplier;
-                    localSeg.assignedValue = serverSeg.multiplier;
-                }
-                else if (serverSeg.type == "FREE_GAMES")
-                {
-                    localSeg.type = WheelSegmentType.FreeGames;
-                    localSeg.assignedValue = serverSeg.freeGames;
-                }
-            }
-        }
-
-        // Re-align and re-format texts based on the new data
-        SetupSegmentTexts();
-    }
 
     [ContextMenu("Setup Segment Texts")]
     public void SetupSegmentTexts()

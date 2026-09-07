@@ -1,0 +1,140 @@
+{
+  "success": true,
+  "matrix": [
+    [
+      "6",
+      "10",
+      "10",
+      "7",
+      "8"
+    ],
+    [
+      "9",
+      "9",
+      "5",
+      "8",
+      "6"
+    ],
+    [
+      "5",
+      "4",
+      "5",
+      "7",
+      "1"
+    ]
+  ],
+  "id": "ResultData",
+  "payload": {
+    "winAmount": 0.5,
+    "lineWins": [
+      {
+        "lineIndex": 0,
+        "symbolId": 6,
+        "symbolName": "K",
+        "matchCount": 3,
+        "payout": 10,
+        "winAmount": 0.1,
+        "positions": [
+          "0,0",
+          "0,1",
+          "0,2"
+        ]
+      },
+      {
+        "lineIndex": 7,
+        "symbolId": 9,
+        "symbolName": "10",
+        "matchCount": 3,
+        "payout": 5,
+        "winAmount": 0.05,
+        "positions": [
+          "1,0",
+          "0,1",
+          "0,2"
+        ]
+      },
+      {
+        "lineIndex": 16,
+        "symbolId": 5,
+        "symbolName": "A",
+        "matchCount": 3,
+        "payout": 10,
+        "winAmount": 0.1,
+        "positions": [
+          "2,0",
+          "0,1",
+          "1,2"
+        ]
+      },
+      {
+        "lineIndex": 17,
+        "symbolId": 9,
+        "symbolName": "10",
+        "matchCount": 3,
+        "payout": 5,
+        "winAmount": 0.05,
+        "positions": [
+          "1,0",
+          "1,1",
+          "0,2"
+        ]
+      },
+      {
+        "lineIndex": 20,
+        "symbolId": 5,
+        "symbolName": "A",
+        "matchCount": 3,
+        "payout": 10,
+        "winAmount": 0.1,
+        "positions": [
+          "2,0",
+          "0,1",
+          "0,2"
+        ]
+      },
+      {
+        "lineIndex": 22,
+        "symbolId": 5,
+        "symbolName": "A",
+        "matchCount": 3,
+        "payout": 10,
+        "winAmount": 0.1,
+        "positions": [
+          "2,0",
+          "0,1",
+          "2,2"
+        ]
+      }
+    ],
+    "jackpotWin": [],
+    "triggeredFeatures": [],
+    "activeFeature": null,
+    "freeSpinsRemaining": 0,
+    "mysteryReveals": [
+      {
+        "position": [
+          1,
+          2
+        ],
+        "revealedSymbolId": 5,
+        "revealedSymbolName": "A"
+      }
+    ],
+    "coinOverlays": [],
+    "meters": {
+      "blue": 9,
+      "yellow": {
+        "Mega": 5000,
+        "Grand": 1000,
+        "Major": 200,
+        "Maxi": 50,
+        "Minor": 20,
+        "Mini": 10
+      },
+      "red": 15
+    }
+  },
+  "player": {
+    "balance": 6883.94
+  }
+}

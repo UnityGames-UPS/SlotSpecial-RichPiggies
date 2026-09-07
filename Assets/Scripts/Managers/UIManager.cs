@@ -1395,15 +1395,19 @@ public class UIManager : MonoBehaviour
                     double originalBetAmount = gameManager.currentBetAmount;
                     string fullText = "";
                     
-                    int currentMatch = 5;
                     for (int m = 0; m < symbol.multipliers.Count; m++)
                     {
+                        // Read the real match count rather than assuming the list starts at
+                        // a 5-of-a-kind: the jackpot symbols pay on ONE symbol, so theirs is
+                        // just { 1 } and counting down from 5 would mislabel every row.
+                        int currentMatch = (symbol.matchCounts != null && m < symbol.matchCounts.Count)
+                            ? symbol.matchCounts[m]
+                            : 5 - m;
+
                         double win = symbol.multipliers[m];
                         string line = $"{currentMatch}     {win.ToString("0.###")}";
                         if (m == 0) fullText = line;
                         else fullText += $"\n{line}";
-                        
-                        currentMatch--;
                     }
                     
                     symbolTexts[i].text = fullText;

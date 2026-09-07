@@ -88,6 +88,12 @@ public class ImageAnimation : MonoBehaviour
       currentLoopCount++;
       onLoopComplete?.Invoke(currentLoopCount);
 
+      // A listener is allowed to stop the animation from inside onLoopComplete — that is
+      // how callers wait for "N full passes". StopAnimation's CancelInvoke cannot help it
+      // here, because we are already inside the invoked call and would re-Invoke below.
+      // Honour the stop instead of overriding it.
+      if (currentAnimationState != ImageState.PLAYING) return;
+
       if (doLoopAnimation)
       {
         Invoke(nameof(AnimationProcess), delayBetweenAnimation + delayBetweenLoop);
@@ -101,6 +107,21 @@ public class ImageAnimation : MonoBehaviour
     {
       Invoke(nameof(AnimationProcess), delayBetweenAnimation);
     }
+  }
+
+  /// <summary>
+  /// Wall-clock length of one full pass at the current AnimationSpeed, using the same
+  /// formula StartAnimation does. Callers that need to know when a one-shot sequence ends
+  /// can use this as a deadline instead of waiting on onLoopComplete forever.
+  /// Note the delay scales with frame count, so duration grows with the SQUARE of it.
+  /// </summary>
+  public float GetSequenceDuration()
+  {
+    if (textureArray == null || textureArray.Count == 0) return 0f;
+
+    float delay = idealFrameRate * (float)textureArray.Count / AnimationSpeed;
+    if (delay <= 0) delay = 0.05f;
+    return delay * textureArray.Count;
   }
 
   public void StartAnimation()
@@ -149,6 +170,20 @@ public class ImageAnimation : MonoBehaviour
       Invoke(nameof(AnimationProcess), delayBetweenAnimation);
       currentAnimationState = ImageState.PLAYING;
     }
+  }
+
+  /// <summary>
+  /// Hard reset: cancels the frame timer AND any pending auto-start queued by
+  /// StartOnAwake / StartonEnable. StopAnimation cannot do this — it early-returns when the
+  /// state is already NONE, and it only cancels AnimationProcess, so a queued StartAnimation
+  /// would still fire and leave the symbol animating on its own.
+  /// </summary>
+  public void CancelAllPending()
+  {
+    CancelInvoke();
+    currentAnimationState = ImageState.NONE;
+    currentLoopCount = 0;
+    indexOfTexture = 0;
   }
 
   public void StopAnimation()

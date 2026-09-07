@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
   [Header("References")]
   [SerializeField] internal SocketIOManager socketManager;
   [SerializeField] internal UIManager uiManager;
+  [SerializeField] internal PigMeterController pigMeters;
   [SerializeField] private PopupManager popupManager;
   [SerializeField] private SlotView slotView;
   [SerializeField] internal WheelSpinController wheelController;
@@ -72,10 +73,16 @@ public class GameManager : MonoBehaviour
     //     slotView.SetInitialMatrix(initialMatrix);
     // }
 
-    if (wheelController != null && gameConfig.uSpinSegments != null)
-    {
-      wheelController.OverrideSegmentsWithData(gameConfig.uSpinSegments);
-    }
+    // [CNY] USpin bonus wheel — no Rich Piggies equivalent. Kept wired so the scene
+    // reference and WheelSpinController still compile; re-purpose or delete later.
+    // if (wheelController != null && gameConfig.uSpinSegments != null)
+    // {
+    //   wheelController.OverrideSegmentsWithData(gameConfig.uSpinSegments);
+    // }
+
+    // Seed the pig / jackpot meters from the init payload's live state. Done after
+    // UpdateBetAmount, because the six jackpot payouts are multiplier x current bet.
+    if (pigMeters != null) pigMeters.SeedFromInit(gameConfig.features);
 
     isInitialized = true;
     currentState = GameState.Idle;
@@ -140,6 +147,11 @@ public class GameManager : MonoBehaviour
     currentBetIndex = index;
     UpdateBetAmount();
     uiManager.UpdateBetDisplay();
+
+    // The jackpot meters hold multipliers; what the player sees is multiplier x bet, so all
+    // six have to be repainted whenever the bet moves.
+    if (pigMeters != null) pigMeters.RefreshJackpotTexts();
+
     if (slotView != null) slotView.OnBetChanged();
   }
 
@@ -208,11 +220,8 @@ public class GameManager : MonoBehaviour
 
     uiManager.OnSpinStarted();
 
-    if (slotView != null)
-    {
-      slotView.StartSpin();
-    }
-
+    // The request goes out immediately so the network round-trip overlaps the reel
+    // animation. SlotView.StartSpin is a coroutine now, so SpinRoutine drives it.
     socketManager.SendSpinRequest(currentBetIndex, isInFreeSpins);
 
     if (spinCoroutine != null)
@@ -222,45 +231,69 @@ public class GameManager : MonoBehaviour
 
   private IEnumerator SpinRoutine()
   {
-    float spinDuration = GetSpinDuration();
-    float elapsed = 0f;
+    // Earliest moment the reels are allowed to settle, so a fast server never makes
+    // the spin look like a stutter. The Stop button cuts this short.
+    float minSpinEndTime = Time.time + GetSpinDuration();
 
-    while (elapsed < spinDuration && !stopRequested)
+    // 1. Spin up. Yields until every column has handed over to its infinite loop.
+    if (slotView != null)
     {
-      elapsed += Time.deltaTime;
+      yield return StartCoroutine(slotView.StartSpin());
+    }
+
+    // 2. Wait for the server result (already requested in StartSpin).
+    while (lastResult == null)
+    {
       yield return null;
     }
 
-    // Player pressed Stop manually — hold for 0.5s so the reels keep
-    // spinning briefly before snapping, giving clear visual feedback.
-    if (stopRequested)
+    // 3. Write the result into the reel strips WHILE they are still looping. The
+    //    cells are off-screen at this moment, so the stop tween simply parks the
+    //    already-correct symbols at restY — nothing is snapped in at stop time.
+    if (slotView != null && lastResult.resultMatrix != null)
     {
-      yield return new WaitForSeconds(0.2f);
+      slotView.PopulateResultMatrix(lastResult.resultMatrix);
+
+      // Cover the Mystery cells straight away, still mid-loop. The matrix above already
+      // wrote the REVEALED symbol into them, so the locker hides it until the reels settle
+      // and SlotView opens every locker as part of its stop sequence.
+      slotView.ShowMysteryLockers(lastResult.mysteryReveals);
+
+      // Coins are stamped in the same beat. Their child sits BELOW the locker, so a coin on
+      // a Mystery cell stays hidden until that locker opens; a coin on a plain cell is
+      // simply visible when the column parks. The meters are passed alongside because the
+      // client works out which coin moved which meter by diffing them.
+      slotView.ShowCoinOverlays(lastResult.coinOverlays, lastResult.meters);
+
+      if (lastResult.triggeredFeatures != null && lastResult.triggeredFeatures.Count > 0)
+      {
+        Debug.LogWarning("[GameManager] Feature trigger not implemented yet: " +
+                         string.Join(", ", lastResult.triggeredFeatures) +
+                         $" (activeFeature: {lastResult.activeFeature ?? "none"}, " +
+                         $"freeSpinsRemaining: {lastResult.serverSpinsRemaining}). " +
+                         "The coin beat still plays; the free-spin round and the meter " +
+                         "resets that end it are not built.");
+      }
     }
 
-    while (lastResult == null)
+    // 4. Cosmetic hold, interruptible by Stop.
+    while (Time.time < minSpinEndTime && !stopRequested)
     {
       yield return null;
     }
 
     currentState = GameState.Stopping;
 
-    if (slotView != null && lastResult.resultMatrix != null)
+    if (slotView != null)
     {
-      if (currentSpinSpeed == SpinSpeed.QuickSpin || stopRequested)
-      {
-        slotView.QuickStop(lastResult.resultMatrix);
+      bool immediate = stopRequested || currentSpinSpeed == SpinSpeed.QuickSpin;
+      bool turbo = currentSpinSpeed != SpinSpeed.Normal;
 
-        // Wait for the snap animation to settle before processing result
-        float quickStopWaitTime = 0.5f;
-        yield return new WaitForSeconds(quickStopWaitTime);
-
-        OnReelsStoppedComplete();
-      }
-      else
-      {
-        slotView.StopSpin(lastResult.resultMatrix, OnReelsStoppedComplete);
-      }
+      yield return StartCoroutine(slotView.StopSpin(
+          immediate,
+          turbo,
+          () => AudioManager.Instance?.PlayReelStop(),
+          OnReelsStoppedComplete));
     }
     else
     {
@@ -282,34 +315,33 @@ public class GameManager : MonoBehaviour
       };
     }
 
-    if (lastResult != null && lastResult.winAmount > 0 && lastResult.winLines != null && lastResult.winLines.Count > 0)
-    {
-      double totalPay = GetTotalPay();
-      double multiplier = totalPay > 0 ? (lastResult.winAmount / totalPay) : 0;
+    // The HUD updates and the controls come back straight away; the win presentation then
+    // plays out on top and does not gate the return to Idle. SlotView fires
+    // OnWinAnimationComplete at the end of its stage 1.
+    uiManager.OnSpinStopping(lastResult);
+    uiManager.EnableControlsAfterWinAnimation();
+    uiManager.OnSpinCompleted(lastResult);
+    currentState = GameState.Idle;
 
-      if (multiplier >= bigWinMultiplierThreshold)
-      {
-        uiManager.DisableControlsDuringWinAnimation();
-        currentState = GameState.Idle;
-        slotView.ShowWinLineAnimation(lastResult.winLines, OnWinAnimationComplete);
-        StartCoroutine(TriggerWinPopupWithDelay(1.5f, lastResult));
-      }
-      else
-      {
-        // For normal wins, trigger UI update immediately and enable controls
-        uiManager.OnSpinStopping(lastResult);
-        uiManager.EnableControlsAfterWinAnimation();
-        uiManager.OnSpinCompleted(lastResult);
-        currentState = GameState.Idle;
-        slotView.ShowWinLineAnimation(lastResult.winLines, OnWinAnimationComplete);
-      }
+    if (lastResult != null && lastResult.winLines != null && lastResult.winLines.Count > 0)
+    {
+      slotView.ShowWinLineAnimation(lastResult.winLines, OnWinAnimationComplete);
     }
     else
     {
-      uiManager.OnSpinStopping(lastResult);
-      currentState = GameState.Idle;
       OnWinAnimationComplete();
     }
+
+    // [CNY] Big-win popup. Threshold-gated control lock plus TriggerWinPopupWithDelay,
+    // which parks the loop on waitingForSpecialWin until the popup resolves. The popup is
+    // still CNY-styled, so it stays off until it is re-authored for Rich Piggies.
+    //
+    // double multiplier = GetTotalPay() > 0 ? (lastResult.winAmount / GetTotalPay()) : 0;
+    // if (multiplier >= bigWinMultiplierThreshold)
+    // {
+    //   uiManager.DisableControlsDuringWinAnimation();
+    //   StartCoroutine(TriggerWinPopupWithDelay(1.5f, lastResult));
+    // }
   }
 
   private IEnumerator TriggerWinPopupWithDelay(float delay, SpinResult result)
@@ -341,17 +373,19 @@ public class GameManager : MonoBehaviour
 
   private void OnWinAnimationComplete()
   {
-    if (lastResult != null)
-    {
-      double totalPay = GetTotalPay();
-      double multiplier = totalPay > 0 ? (lastResult.winAmount / totalPay) : 0;
-
-      // Only update UI here if it wasn't already updated in OnReelsStoppedComplete (multiplier < bigWinMultiplierThreshold)
-      if (multiplier >= bigWinMultiplierThreshold)
-      {
-        uiManager.OnSpinStopping(lastResult);
-      }
-    }
+    // [WINLINES OFF] The big-win branch existed only to catch up the HUD after the win
+    // animation finished. OnReelsStoppedComplete now always calls OnSpinStopping itself
+    // before getting here, so re-calling it would just double-update the display.
+    //
+    // if (lastResult != null)
+    // {
+    //   double totalPay = GetTotalPay();
+    //   double multiplier = totalPay > 0 ? (lastResult.winAmount / totalPay) : 0;
+    //   if (multiplier >= bigWinMultiplierThreshold)
+    //   {
+    //     uiManager.OnSpinStopping(lastResult);
+    //   }
+    // }
 
     StartCoroutine(ProcessSpecialFeaturesAfterWin());
   }
@@ -364,23 +398,29 @@ public class GameManager : MonoBehaviour
       yield return null;
     }
 
-    if (lastResult != null && lastResult.uSpinData != null && lastResult.uSpinData.triggered)
-    {
-      yield return StartCoroutine(DelayUSpinTriggerResult());
-      yield break;
-    }
+    // [CNY] USpin wheel and MoneyBag pick bonuses have no Rich Piggies equivalent.
+    // if (lastResult != null && lastResult.uSpinData != null && lastResult.uSpinData.triggered)
+    // {
+    //   yield return StartCoroutine(DelayUSpinTriggerResult());
+    //   yield break;
+    // }
+    //
+    // if (lastResult != null && lastResult.moneyBagData != null && lastResult.moneyBagData.triggered)
+    // {
+    //   yield return StartCoroutine(DelayMoneyBagTriggerResult());
+    //   yield break;
+    // }
 
-    if (lastResult != null && lastResult.moneyBagData != null && lastResult.moneyBagData.triggered)
-    {
-      yield return StartCoroutine(DelayMoneyBagTriggerResult());
-      yield break;
-    }
-
-    if (lastResult != null && lastResult.freeSpinData != null && lastResult.freeSpinData.isTriggered && !isInFreeSpins)
-    {
-      yield return StartCoroutine(DelayScatterTriggerResult());
-      yield break;
-    }
+    // [CNY] Free-spin trigger presentation animated the single scatter symbol. Rich
+    // Piggies triggers on any combination of Blue / Yellow / Red piggies instead, so the
+    // presentation is re-authored once the piggy payload is defined. The free-spin STATE
+    // machine below (StartFreeSpins / EndFreeSpins) is left intact and stays inert while
+    // the server sends no freeSpinData.
+    // if (lastResult != null && lastResult.freeSpinData != null && lastResult.freeSpinData.isTriggered && !isInFreeSpins)
+    // {
+    //   yield return StartCoroutine(DelayScatterTriggerResult());
+    //   yield break;
+    // }
 
     ResumeAfterSpecialFeature();
   }
@@ -397,64 +437,71 @@ public class GameManager : MonoBehaviour
     }
   }
 
-  private IEnumerator DelayScatterTriggerResult()
-  {
-    // Play special feature trigger sound AFTER all reels have stopped
-    AudioManager.Instance?.Play3UspinWinLineLoop();
-
-    // Start scatter animations together AFTER all reels have stopped
-    // Using 4 loops to match the 6-second delay (4 * 1.5s = 6s)
-    slotView.AnimateAllScatters(4);
-
-    // Wait for scatter hit animations to play
-    yield return new WaitForSeconds(3.5f);
-    ProcessSpinResult();
-  }
-
-  private IEnumerator DelayUSpinTriggerResult()
-  {
-    AudioManager.Instance?.Play3UspinWinLineLoop();
-
-    bool animFinished = false;
-    if (slotView != null)
-    {
-      slotView.AnimateUSpinWin(() =>
-      {
-        animFinished = true;
-      });
-    }
-    else
-    {
-      animFinished = true;
-    }
-
-    yield return new WaitUntil(() => animFinished);
-
-    uiManager.TriggerUSpinBonus(lastResult.uSpinData, () =>
-    {
-      AudioManager.Instance?.Stop3UspinWinLineLoop();
-      lastResult.uSpinData.triggered = false;
-      ResumeAfterSpecialFeature();
-    });
-  }
-
-  private IEnumerator DelayMoneyBagTriggerResult()
-  {
-    AudioManager.Instance?.Play3UspinWinLineLoop();
-
-    if (slotView != null)
-    {
-      slotView.AnimateMoneyBagWin();
-    }
-
-    yield return new WaitForSeconds(3.5f);
-
-    uiManager.TriggerMoneyBagBonus(lastResult.moneyBagData, () =>
-    {
-      lastResult.moneyBagData.triggered = false;
-      ResumeAfterSpecialFeature();
-    });
-  }
+  // ==========================================================================
+  // [CNY] Feature trigger presentations. These drove the USpin wheel, the MoneyBag
+  // pick bonus and the scatter free-spin trigger — none of which exist in Rich
+  // Piggies. Commented out rather than deleted so the beat structure (animate the
+  // trigger symbols, wait, hand off to a UIManager popup, resume) can be reused for
+  // the piggy triggers and the Mystery reveal.
+  // ==========================================================================
+  // private IEnumerator DelayScatterTriggerResult()
+  // {
+  // // Play special feature trigger sound AFTER all reels have stopped
+  // AudioManager.Instance?.Play3UspinWinLineLoop();
+  //
+  // // Start scatter animations together AFTER all reels have stopped
+  // // Using 4 loops to match the 6-second delay (4 * 1.5s = 6s)
+  // slotView.AnimateAllScatters(4);
+  //
+  // // Wait for scatter hit animations to play
+  // yield return new WaitForSeconds(3.5f);
+  // ProcessSpinResult();
+  // }
+  //
+  // private IEnumerator DelayUSpinTriggerResult()
+  // {
+  // AudioManager.Instance?.Play3UspinWinLineLoop();
+  //
+  // bool animFinished = false;
+  // if (slotView != null)
+  // {
+  // slotView.AnimateUSpinWin(() =>
+  // {
+  // animFinished = true;
+  // });
+  // }
+  // else
+  // {
+  // animFinished = true;
+  // }
+  //
+  // yield return new WaitUntil(() => animFinished);
+  //
+  // uiManager.TriggerUSpinBonus(lastResult.uSpinData, () =>
+  // {
+  // AudioManager.Instance?.Stop3UspinWinLineLoop();
+  // lastResult.uSpinData.triggered = false;
+  // ResumeAfterSpecialFeature();
+  // });
+  // }
+  //
+  // private IEnumerator DelayMoneyBagTriggerResult()
+  // {
+  // AudioManager.Instance?.Play3UspinWinLineLoop();
+  //
+  // if (slotView != null)
+  // {
+  // slotView.AnimateMoneyBagWin();
+  // }
+  //
+  // yield return new WaitForSeconds(3.5f);
+  //
+  // uiManager.TriggerMoneyBagBonus(lastResult.moneyBagData, () =>
+  // {
+  // lastResult.moneyBagData.triggered = false;
+  // ResumeAfterSpecialFeature();
+  // });
+  // }
 
   private IEnumerator DelayBeforeNextRound()
   {

@@ -1,0 +1,429 @@
+{
+  "id": "initData",
+  "gameData": {
+    "lines": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      [
+        0,
+        1,
+        2,
+        1,
+        0
+      ],
+      [
+        2,
+        1,
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        2,
+        2,
+        1,
+        2,
+        2
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        1,
+        2,
+        2,
+        2,
+        1
+      ],
+      [
+        0,
+        1,
+        1,
+        1,
+        0
+      ],
+      [
+        2,
+        1,
+        1,
+        1,
+        2
+      ],
+      [
+        1,
+        0,
+        1,
+        2,
+        1
+      ],
+      [
+        1,
+        2,
+        1,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        2,
+        1,
+        2,
+        1,
+        2
+      ],
+      [
+        0,
+        2,
+        1,
+        0,
+        2
+      ],
+      [
+        2,
+        0,
+        1,
+        2,
+        0
+      ],
+      [
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      [
+        0,
+        2,
+        2,
+        2,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        2
+      ],
+      [
+        0,
+        2,
+        0,
+        2,
+        0
+      ],
+      [
+        2,
+        0,
+        2,
+        0,
+        2
+      ],
+      [
+        1,
+        0,
+        2,
+        0,
+        1
+      ],
+      [
+        1,
+        2,
+        0,
+        2,
+        1
+      ]
+    ],
+    "bets": [
+      0.01,
+      0.1,
+      1,
+      1.5,
+      2,
+      3
+    ],
+    "totalLines": 25
+  },
+  "features": {
+    "mysteryReveal": {
+      "enabled": true
+    },
+    "bluePig": {
+      "defaultMeter": 9,
+      "maxMeter": 15
+    },
+    "yellowPig": {
+      "freeSpinsCount": 8,
+      "jackpotLevels": {
+        "Maxi": 5,
+        "Mega": 6,
+        "Mini": 2,
+        "Grand": 5,
+        "Major": 4,
+        "Minor": 2
+      },
+      "defaultJackpotMultipliers": {
+        "Maxi": 50,
+        "Mega": 5000,
+        "Mini": 10,
+        "Grand": 1000,
+        "Major": 200,
+        "Minor": 20
+      }
+    },
+    "redPig": {
+      "defaultWilds": 15,
+      "maxMeter": 100,
+      "freeSpinsCount": 10,
+      "wildCountBuckets": [
+        15,
+        30,
+        45,
+        60,
+        75,
+        100
+      ]
+    },
+    "minMatchCount": 3,
+    "activeFeature": null,
+    "freeSpinsRemaining": 0,
+    "meters": {
+      "blue": 9,
+      "yellow": {
+        "Mega": 5000,
+        "Grand": 1000,
+        "Major": 200,
+        "Maxi": 50,
+        "Minor": 20,
+        "Mini": 10
+      },
+      "red": 15
+    }
+  },
+  "uiData": {
+    "paylines": {
+      "symbols": [
+        {
+          "id": 0,
+          "name": "BusinessPig",
+          "payout": {
+            "3": 20,
+            "4": 125,
+            "5": 200
+          },
+          "description": ""
+        },
+        {
+          "id": 1,
+          "name": "LadyPig",
+          "payout": {
+            "3": 15,
+            "4": 60,
+            "5": 125
+          },
+          "description": ""
+        },
+        {
+          "id": 2,
+          "name": "BeachPig",
+          "payout": {
+            "3": 15,
+            "4": 40,
+            "5": 100
+          },
+          "description": ""
+        },
+        {
+          "id": 3,
+          "name": "DiamondPendant",
+          "payout": {
+            "3": 10,
+            "4": 25,
+            "5": 60
+          },
+          "description": ""
+        },
+        {
+          "id": 4,
+          "name": "Yacht",
+          "payout": {
+            "3": 10,
+            "4": 25,
+            "5": 60
+          },
+          "description": ""
+        },
+        {
+          "id": 5,
+          "name": "A",
+          "payout": {
+            "3": 10,
+            "4": 25,
+            "5": 60
+          },
+          "description": ""
+        },
+        {
+          "id": 6,
+          "name": "K",
+          "payout": {
+            "3": 10,
+            "4": 25,
+            "5": 60
+          },
+          "description": ""
+        },
+        {
+          "id": 7,
+          "name": "Q",
+          "payout": {
+            "3": 5,
+            "4": 20,
+            "5": 60
+          },
+          "description": ""
+        },
+        {
+          "id": 8,
+          "name": "J",
+          "payout": {
+            "3": 5,
+            "4": 20,
+            "5": 60
+          },
+          "description": ""
+        },
+        {
+          "id": 9,
+          "name": "10",
+          "payout": {
+            "3": 5,
+            "4": 20,
+            "5": 60
+          },
+          "description": ""
+        },
+        {
+          "id": 10,
+          "name": "Wild",
+          "description": "Substitutes for all symbols except Blue Coin, Yellow Coin and Red Coin."
+        },
+        {
+          "id": 11,
+          "name": "Mystery",
+          "description": "Reveals a random paying symbol or Wild before paylines are evaluated. May additionally reveal a Blue, Yellow or Red Coin overlay."
+        },
+        {
+          "id": 12,
+          "name": "BlueCoin",
+          "description": "Advances the Blue Pig meter or immediately triggers Blue Free Spins."
+        },
+        {
+          "id": 13,
+          "name": "YellowCoin",
+          "description": "Advances the Yellow Pig jackpot meters or immediately triggers Yellow Free Spins."
+        },
+        {
+          "id": 14,
+          "name": "RedCoin",
+          "description": "Advances the Red Pig Wild meter or immediately triggers Red Free Spins."
+        },
+        {
+          "id": 15,
+          "name": "Mega",
+          "payout": {
+            "1": 5000
+          },
+          "description": "Mega Jackpot Symbol"
+        },
+        {
+          "id": 16,
+          "name": "Grand",
+          "payout": {
+            "1": 1000
+          },
+          "description": "Grand Jackpot Symbol"
+        },
+        {
+          "id": 17,
+          "name": "Major",
+          "payout": {
+            "1": 200
+          },
+          "description": "Major Jackpot Symbol"
+        },
+        {
+          "id": 18,
+          "name": "Maxi",
+          "payout": {
+            "1": 50
+          },
+          "description": "Maxi Jackpot Symbol"
+        },
+        {
+          "id": 19,
+          "name": "Minor",
+          "payout": {
+            "1": 20
+          },
+          "description": "Minor Jackpot Symbol"
+        },
+        {
+          "id": 20,
+          "name": "Mini",
+          "payout": {
+            "1": 10
+          },
+          "description": "Mini Jackpot Symbol"
+        }
+      ]
+    }
+  },
+  "player": {
+    "balance": 6876.54
+  }
+}
