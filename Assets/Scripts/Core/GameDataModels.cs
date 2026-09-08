@@ -70,9 +70,45 @@ public class ServerFeatures
   public int minMatchCount;
 
   // Live state — carried so nothing is lost; nothing reads these yet.
-  public string activeFeature;
+
+  /// <summary>
+  /// Features currently running for this player. Init sends an array (empty when idle);
+  /// the spin payload sends a single string, so the converter accepts both.
+  /// </summary>
+  [JsonConverter(typeof(StringOrArrayConverter))]
+  public List<string> activeFeature;
+
   public int freeSpinsRemaining;
   public ServerMeters meters;
+}
+
+/// <summary>
+/// Reads a JSON field that may be a string, an array of strings, or null into a
+/// <see cref="List{String}"/>. The server has shipped <c>activeFeature</c> as all three.
+/// </summary>
+public class StringOrArrayConverter : JsonConverter
+{
+  public override bool CanConvert(Type objectType) => objectType == typeof(List<string>);
+
+  public override object ReadJson(JsonReader reader, Type objectType, object existingValue,
+                                  JsonSerializer serializer)
+  {
+    switch (reader.TokenType)
+    {
+      case JsonToken.Null:
+        return null;
+      case JsonToken.StartArray:
+        return serializer.Deserialize<List<string>>(reader);
+      default:
+        var single = reader.Value?.ToString();
+        return string.IsNullOrEmpty(single) ? new List<string>() : new List<string> { single };
+    }
+  }
+
+  public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+  {
+    serializer.Serialize(writer, value);
+  }
 }
 
 [Serializable]
@@ -198,8 +234,12 @@ public class ServerPayload
   /// <summary>e.g. ["bluePig"] on a trigger spin, ["jackpot_Grand"] on a jackpot award.</summary>
   public List<string> triggeredFeatures;
 
-  /// <summary>"blue" / "yellow" / "red" while a free-spin round is running, else null.</summary>
-  public string activeFeature;
+  /// <summary>
+  /// Features running while a free-spin round is live — "blue" / "yellow" / "red";
+  /// empty or null in the base game. Same shape as the init block's field.
+  /// </summary>
+  [JsonConverter(typeof(StringOrArrayConverter))]
+  public List<string> activeFeature;
   public int freeSpinsRemaining;
 
   /// <summary>
@@ -404,7 +444,7 @@ public class SpinResult
 
   public List<ServerJackpotWin> jackpotWins;
   public List<string> triggeredFeatures;
-  public string activeFeature;
+  public List<string> activeFeature;
   public Dictionary<string, int> yellowFSCollections;
 
   public PlayerData playerData;
@@ -680,7 +720,7 @@ public static class InitDataConverter
     // Free spins are server-driven. Rich Piggies reports only how many remain; the round
     // is over the moment that hits zero while a feature is active.
     int spinsRemaining = payload != null ? payload.freeSpinsRemaining : 0;
-    bool inFeature = payload != null && !string.IsNullOrEmpty(payload.activeFeature);
+    bool inFeature = payload?.activeFeature != null && payload.activeFeature.Count > 0;
 
     var result = new SpinResult
     {

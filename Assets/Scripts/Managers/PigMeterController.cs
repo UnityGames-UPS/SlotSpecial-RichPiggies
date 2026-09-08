@@ -36,8 +36,8 @@ public class PigMeterController : MonoBehaviour
     [Tooltip("Where a jackpot coin for this tier flies to. Portrait.")]
     public RectTransform targetPortrait;
 
-    [Tooltip("Placeholder tint for this tier's coin until the real art lands.")]
-    public Color coinColor = Color.white;
+    [Tooltip("This tier's coin PNG sequence, in order. Looped for the whole flight.")]
+    public List<Sprite> coinFrames = new List<Sprite>();
   }
 
   /// <summary>One pig: its two Spine graphics, its two coin destinations, its coin colour.</summary>
@@ -53,11 +53,11 @@ public class PigMeterController : MonoBehaviour
     [Tooltip("Where a coin of this colour flies to. Landscape.")]
     public RectTransform target;
 
-    [Tooltip("Where a coin of this colour flies to. Portrait.")]
+    [Tooltip("Where this pig's coin flies to. Portrait.")]
     public RectTransform targetPortrait;
 
-    [Tooltip("Placeholder tint for this coin until the real art lands.")]
-    public Color coinColor = Color.white;
+    [Tooltip("This coin's PNG sequence, in order. Looped for the whole flight.")]
+    public List<Sprite> coinFrames = new List<Sprite>();
   }
 
   [Header("References")]
@@ -91,9 +91,16 @@ public class PigMeterController : MonoBehaviour
   [SerializeField] private string jumpAnimation = "Jump";
 
   [Header("Coin")]
-  [Tooltip("Prefab used for the jackpot coins the Yellow Pig sends onward. Instantiated and " +
-           "destroyed per coin, unlike the symbol coins which are cached on their cell.")]
+  [Tooltip("Prefab used for the jackpot coins the Yellow Pig sends onward. Needs an Image " +
+           "plus an ImageAnimation driving it. Instantiated and destroyed per coin, unlike " +
+           "the symbol coins which are cached on their cell.")]
   [SerializeField] private GameObject jackpotCoinPrefab;
+
+  [Tooltip("ImageAnimation speed shared by ALL nine coin sequences. Note ImageAnimation's " +
+           "frame delay scales with frame count, so at one speed a longer sequence plays " +
+           "SLOWER per frame, not just longer — keep the nine sequences the same length, or " +
+           "expect them to spin at visibly different rates.")]
+  [SerializeField] private float coinAnimationSpeed = 5f;
 
   // Last meter values the client rendered. Diffed against the next spin's meters to work
   // out which coin moved what. Resynced to the server value at the end of every coin beat,
@@ -241,17 +248,25 @@ public class PigMeterController : MonoBehaviour
     return IsPortrait ? (ui.targetPortrait ?? ui.target) : (ui.target ?? ui.targetPortrait);
   }
 
-  internal Color CoinColor(int coinSymbolId)
+  /// <summary>The PNG sequence for a Blue / Yellow / Red coin, or null when none is wired.</summary>
+  internal List<Sprite> CoinFrames(int coinSymbolId)
   {
     var ui = FindPig(coinSymbolId);
-    return ui != null ? ui.coinColor : Color.white;
+    return ui != null ? ui.coinFrames : null;
   }
 
-  internal Color JackpotCoinColor(string tier)
+  /// <summary>The PNG sequence for a jackpot tier's coin, or null when none is wired.</summary>
+  internal List<Sprite> JackpotCoinFrames(string tier)
   {
     var ui = FindTier(tier);
-    return ui != null ? ui.coinColor : Color.white;
+    return ui != null ? ui.coinFrames : null;
   }
+
+  /// <summary>
+  /// ImageAnimation speed shared by all nine coin sequences, so every coin in the game
+  /// animates at the same rate.
+  /// </summary>
+  internal float CoinAnimationSpeed => coinAnimationSpeed;
 
   #endregion
 
@@ -330,10 +345,30 @@ public class PigMeterController : MonoBehaviour
     if (origin != null) rect.position = origin.position;
     rect.localScale = Vector3.one;
 
+    // Spawned on its idle frame. StartJackpotCoinAnimation sets it spinning when it launches.
+    var animation = instance.GetComponent<ImageAnimation>();
     var image = instance.GetComponent<UnityEngine.UI.Image>();
-    if (image != null) image.color = JackpotCoinColor(tier);
+    if (!CoinAnimator.ShowIdle(animation, image, JackpotCoinFrames(tier)))
+    {
+      Debug.LogError($"[PigMeters] Jackpot tier \"{tier}\" has no coin frames, or the prefab " +
+                     "has no Image/ImageAnimation — its coin will fly as a blank image.", this);
+    }
 
     return rect;
+  }
+
+  /// <summary>Set a spawned jackpot coin spinning for its flight.</summary>
+  internal void StartJackpotCoinAnimation(RectTransform coin, string tier)
+  {
+    if (coin == null) return;
+    CoinAnimator.Play(coin.GetComponent<ImageAnimation>(), JackpotCoinFrames(tier), coinAnimationSpeed);
+  }
+
+  /// <summary>Stop a jackpot coin spinning and rest it on its idle frame as it lands.</summary>
+  internal void StopJackpotCoinAnimation(RectTransform coin)
+  {
+    if (coin == null) return;
+    CoinAnimator.Stop(coin.GetComponent<ImageAnimation>());
   }
 
   #endregion

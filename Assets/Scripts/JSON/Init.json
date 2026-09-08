@@ -229,7 +229,7 @@
       ]
     },
     "minMatchCount": 3,
-    "activeFeature": null,
+    "activeFeature": [],
     "freeSpinsRemaining": 0,
     "meters": {
       "blue": 9,
@@ -424,6 +424,6 @@
     }
   },
   "player": {
-    "balance": 6876.54
+    "balance": 6869.84
   }
 }

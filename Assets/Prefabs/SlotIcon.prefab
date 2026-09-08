@@ -500,7 +500,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 657ceb1599fcd4f238b1c13e4ec2cf97, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1874ba087c20d468eaf45cd1ee35c35d, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -606,6 +606,7 @@ MonoBehaviour:
   lockerAnimation: {fileID: 634299687518127368}
   coinOverlay: {fileID: 3630767635989487102}
   coinImage: {fileID: 8956845048553436615}
+  coinAnimation: {fileID: 4914849140462668877}
   winTextFadeDuration: 0.1
 --- !u!1 &8457982999522792697
 GameObject:
@@ -618,6 +619,7 @@ GameObject:
   - component: {fileID: 3630767635989487102}
   - component: {fileID: 6261550363214321240}
   - component: {fileID: 8956845048553436615}
+  - component: {fileID: 4914849140462668877}
   m_Layer: 5
   m_Name: Coin
   m_TagString: Untagged
@@ -642,7 +644,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 135, y: 135}
+  m_SizeDelta: {x: 210, y: 210}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6261550363214321240
 CanvasRenderer:
@@ -672,7 +674,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -2040552694, guid: 7805d98bc8083454b877f38c0384f266, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -682,3 +684,25 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4914849140462668877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8457982999522792697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad710797c4c5a49d98a053ecb28392bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ImageAnimation
+  textureArray: []
+  rendererDelegate: {fileID: 8956845048553436615}
+  useSharedMaterial: 1
+  doLoopAnimation: 1
+  StartOnAwake: 0
+  StartonEnable: 0
+  currentAnimationState: 0
+  AnimationSpeed: 5
+  delayBetweenLoop: 0
+  animationStartDelay: 0

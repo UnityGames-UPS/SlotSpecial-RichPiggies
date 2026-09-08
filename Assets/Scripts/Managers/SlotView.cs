@@ -132,7 +132,18 @@ public class SlotView : MonoBehaviour
            "and the meter UI. Must sit above winAnimationLayer in the hierarchy.")]
   [SerializeField] private RectTransform coinFlightLayer;
 
-  [Tooltip("Seconds a coin takes to reach its destination.")]
+  [Tooltip("Coin travel speed in world units/second. Every coin moves at THIS speed, so a " +
+           "coin on reel 1 and one on reel 5 look like the same object travelling — the far " +
+           "one simply takes longer. Set to 0 to fall back to the fixed coinFlightDuration " +
+           "below, which makes every coin take the same time regardless of distance.")]
+  [SerializeField] private float coinFlightSpeed = 1600f;
+
+  [Tooltip("Floor and ceiling on the derived duration, so a coin that starts almost on its " +
+           "pig still reads as a flight and one crossing the whole screen does not drag.")]
+  [SerializeField] private float coinMinFlightDuration = 0.35f;
+  [SerializeField] private float coinMaxFlightDuration = 1.1f;
+
+  [Tooltip("Fixed flight time, used only when coinFlightSpeed is 0.")]
   [SerializeField] private float coinFlightDuration = 0.8f;
 
   [Tooltip("Ease applied to a coin's flight.")]
@@ -140,6 +151,11 @@ public class SlotView : MonoBehaviour
 
   [Tooltip("How long a coin takes to shrink away once it lands.")]
   [SerializeField] private float coinShrinkDuration = 0.2f;
+
+  [Tooltip("Ease on that shrink. InQuad collapses straight down. Note a 'Back' ease " +
+           "overshoots at the START of a tween, so InBack would swell the coin ~10% before " +
+           "it disappears rather than bouncing on landing.")]
+  [SerializeField] private Ease coinShrinkEase = Ease.InQuad;
 
   [Tooltip("Gap between one coin LAUNCHING and the next. Flights overlap: coin 2 leaves " +
            "while coin 1 may still be in the air, or its jackpot coin still travelling.")]
@@ -921,7 +937,7 @@ public class SlotView : MonoBehaviour
         continue;
       }
 
-      if (!cell.ShowCoin(pigMeters.CoinColor(plan.coinSymbolId)))
+      if (!cell.ShowCoin(pigMeters.CoinFrames(plan.coinSymbolId)))
       {
         Debug.LogError($"[SlotView] Cell at col {plan.col}, row {plan.row} has no coin child, " +
                        "so its coin cannot be shown. Check the SlotIcon prefab.", this);
@@ -990,22 +1006,33 @@ public class SlotView : MonoBehaviour
 
     cell.DetachCoin(coinFlightLayer);
 
+    // The coin has been sitting on the grid on its idle frame since the reveal, through the
+    // launch stagger. It only spins while it is actually travelling.
+    cell.StartCoinAnimation(pigMeters.CoinFrames(coinId), pigMeters.CoinAnimationSpeed);
+
     yield return StartCoroutine(CoinFlyer.Fly(
         cell.CoinRect,
         () => pigMeters.PigTarget(coinId),
-        coinFlightDuration, coinFlightEase, coinShrinkDuration,
+        FlightDurationFor(cell.CoinRect, pigMeters.PigTarget(coinId)),
+        coinFlightEase, coinShrinkDuration, coinShrinkEase,
+
+        // On touchdown, not after the shrink: the coin settles back onto its idle frame while
+        // the pig reacts and the meter ticks, so the catch reads as one event rather than
+        // three in sequence.
+        onTouchdown: () =>
+        {
+          cell.StopCoinAnimation();
+          pigMeters.PlayPigJump(coinId);
+
+          if (plan.movesMeter)
+          {
+            if (coinId == RichPiggiesSymbols.BlueCoin) pigMeters.SetBlueText(plan.meterValueAfter);
+            else if (coinId == RichPiggiesSymbols.RedCoin) pigMeters.SetRedText(plan.meterValueAfter);
+          }
+        },
         onArrive: null));
 
-    pigMeters.PlayPigJump(coinId);
     cell.ReturnCoinHome();
-
-    // The meter text only moves once the coin has actually arrived, so the number and the
-    // pig's reaction read as one event.
-    if (plan.movesMeter)
-    {
-      if (coinId == RichPiggiesSymbols.BlueCoin) pigMeters.SetBlueText(plan.meterValueAfter);
-      else if (coinId == RichPiggiesSymbols.RedCoin) pigMeters.SetRedText(plan.meterValueAfter);
-    }
 
     foreach (var award in plan.jackpotAwards)
     {
@@ -1035,16 +1062,48 @@ public class SlotView : MonoBehaviour
     }
 
     string tier = award.tier;
+    double valueAfter = award.valueAfter;
+
+    pigMeters.StartJackpotCoinAnimation(coin, tier);
+
     yield return StartCoroutine(CoinFlyer.Fly(
         coin,
         () => pigMeters.JackpotTarget(tier),
-        coinFlightDuration, coinFlightEase, coinShrinkDuration,
-        onArrive: null));
+        FlightDurationFor(coin, pigMeters.JackpotTarget(tier)),
+        coinFlightEase, coinShrinkDuration, coinShrinkEase,
 
-    pigMeters.SetJackpotText(award.tier, award.valueAfter);
+        // Same beat as the pig: the coin settles onto its idle frame and the payout ticks up
+        // as it collapses into the meter.
+        onTouchdown: () =>
+        {
+          pigMeters.StopJackpotCoinAnimation(coin);
+          pigMeters.SetJackpotText(tier, valueAfter);
+        },
+        onArrive: null));
 
     spawnedJackpotCoins.Remove(coin.gameObject);
     Destroy(coin.gameObject);
+  }
+
+  /// <summary>
+  /// How long this particular coin should take, from how far it actually has to go.
+  ///
+  /// Same reasoning as the reels' <see cref="DurationFor"/>: a constant duration would mean a
+  /// coin on reel 1 and a coin on reel 5 travel at wildly different speeds to land together,
+  /// which reads as two different objects. A constant SPEED keeps them looking like the same
+  /// coin. Measured in world space, so the portrait layout's smaller slot scale is accounted
+  /// for without a second set of numbers.
+  ///
+  /// The distance is sampled once, at launch. A destination that moves mid-flight (a rotation)
+  /// bends the path without re-timing it — the coin just covers the new distance a little
+  /// faster or slower, which is far less jarring than a duration that changes underneath it.
+  /// </summary>
+  private float FlightDurationFor(RectTransform coin, RectTransform target)
+  {
+    if (coinFlightSpeed <= 0f || coin == null || target == null) return coinFlightDuration;
+
+    float distance = Vector3.Distance(coin.position, target.position);
+    return Mathf.Clamp(distance / coinFlightSpeed, coinMinFlightDuration, coinMaxFlightDuration);
   }
 
   /// <summary>Send every coin home hidden and forget the round's plans. Idempotent.</summary>

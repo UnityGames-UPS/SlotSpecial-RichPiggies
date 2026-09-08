@@ -58,8 +58,14 @@ public class SlotSymbolView : MonoBehaviour
            "until the locker opens. Inactive in the prefab. Optional.")]
   [SerializeField] internal RectTransform coinOverlay;
 
-  [Tooltip("Image on the coinOverlay child, tinted per coin type at runtime.")]
+  [Tooltip("Image on the coinOverlay child. Its sprite is driven by coinAnimation.")]
   [SerializeField] internal Image coinImage;
+
+  [Tooltip("ImageAnimation driving coinImage — expected on the SAME GameObject as it, with " +
+           "its rendererDelegate pointing at it and StartOnAwake / StartonEnable both OFF. " +
+           "The frames come from PigMeterController per coin type, so leave textureArray " +
+           "empty in the prefab.")]
+  [SerializeField] internal ImageAnimation coinAnimation;
 
   /// <summary>Symbol id currently displayed, or -1 before the first SetSymbol.</summary>
   internal int SymbolId { get; private set; } = -1;
@@ -106,6 +112,7 @@ public class SlotSymbolView : MonoBehaviour
     {
       coinOverlay = coin as RectTransform;
       coinImage = coin.GetComponent<Image>();
+      coinAnimation = coin.GetComponent<ImageAnimation>();
     }
   }
 
@@ -499,9 +506,9 @@ public class SlotSymbolView : MonoBehaviour
   // The child is cached rather than instantiated: a cell can only ever reveal one coin per
   // spin, so there is nothing to pool. It goes back home disabled when the flight ends.
   //
-  // NOTE: the coin is currently a placeholder — a plain white Image tinted per coin type.
-  // When the real coin art lands it becomes an ImageAnimation or Spine child here; only the
-  // visual swaps, the flight and meter plumbing below are unaffected.
+  // The coin's look is a looping PNG sequence, one per coin type, supplied by
+  // PigMeterController rather than baked into the prefab — nine sequences share this one
+  // child, so the cell cannot know which it will show until the result arrives.
 
   private Transform coinHomeParent;
   private int coinHomeSiblingIndex;
@@ -511,10 +518,12 @@ public class SlotSymbolView : MonoBehaviour
   internal RectTransform CoinRect => coinOverlay;
 
   /// <summary>
-  /// Reveal the coin on this cell in <paramref name="tint"/>. Returns false when the cell
-  /// has no coin child, which is a prefab wiring bug rather than a normal state.
+  /// Reveal the coin on this cell, sitting STILL on frame 0 of <paramref name="frames"/> —
+  /// its idle pose. It does not animate until <see cref="StartCoinAnimation"/> launches it.
+  /// Returns false when the cell has no coin child, which is a prefab wiring bug rather than
+  /// a normal state.
   /// </summary>
-  internal bool ShowCoin(Color tint)
+  internal bool ShowCoin(List<Sprite> frames)
   {
     if (coinOverlay == null) return false;
 
@@ -522,11 +531,37 @@ public class SlotSymbolView : MonoBehaviour
     // already shrunk or still parented to the flight layer.
     ReturnCoinHome();
 
-    if (coinImage != null) coinImage.color = tint;
-
     coinOverlay.localScale = Vector3.one;
+
+    // Activate BEFORE touching the animation: ImageAnimation's OnDisable stops it, so work
+    // done on a still-inactive object would be undone the moment it ran.
     coinOverlay.gameObject.SetActive(true);
+
+    // Not fatal if this fails — the coin is on screen either way. Worth saying so, because a
+    // coin stuck on the wrong sprite looks like a missing asset.
+    if (!CoinAnimator.ShowIdle(coinAnimation, coinImage, frames))
+    {
+      Debug.LogError("[SlotSymbolView] Coin revealed with no frames — check the coin's Image " +
+                     "and ImageAnimation wiring on the SlotIcon prefab, and the coinFrames " +
+                     "list for this coin type on PigMeterController.", this);
+    }
+
     return true;
+  }
+
+  /// <summary>
+  /// Set the coin spinning for its flight. Called as it leaves the cell, so a coin sitting on
+  /// the grid waiting its turn in the stagger stays on its idle pose.
+  /// </summary>
+  internal void StartCoinAnimation(List<Sprite> frames, float animationSpeed)
+  {
+    CoinAnimator.Play(coinAnimation, frames, animationSpeed);
+  }
+
+  /// <summary>Stop the coin spinning and rest it on its idle pose. Used the moment it lands.</summary>
+  internal void StopCoinAnimation()
+  {
+    CoinAnimator.Stop(coinAnimation);
   }
 
   /// <summary>
@@ -548,6 +583,7 @@ public class SlotSymbolView : MonoBehaviour
     if (coinOverlay == null) return;
 
     coinOverlay.DOKill();
+    CoinAnimator.Stop(coinAnimation);
 
     if (coinHomeParent != null && coinOverlay.parent != coinHomeParent)
     {

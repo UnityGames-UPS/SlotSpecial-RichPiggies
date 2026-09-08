@@ -269,7 +269,7 @@ public class GameManager : MonoBehaviour
       {
         Debug.LogWarning("[GameManager] Feature trigger not implemented yet: " +
                          string.Join(", ", lastResult.triggeredFeatures) +
-                         $" (activeFeature: {lastResult.activeFeature ?? "none"}, " +
+                         $" (activeFeature: {(lastResult.activeFeature != null && lastResult.activeFeature.Count > 0 ? string.Join(", ", lastResult.activeFeature) : "none")}, " +
                          $"freeSpinsRemaining: {lastResult.serverSpinsRemaining}). " +
                          "The coin beat still plays; the free-spin round and the meter " +
                          "resets that end it are not built.");
