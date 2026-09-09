@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &5275717936021542771
+--- !u!1 &6552941231962354339
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,24 +8,24 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7515923536686107233}
-  - component: {fileID: 4757642387059543735}
-  - component: {fileID: 5055663082484229935}
-  - component: {fileID: 7035737001251154995}
+  - component: {fileID: 3577097563430155857}
+  - component: {fileID: 4957995317919584553}
+  - component: {fileID: 624077383039737256}
+  - component: {fileID: -6927088472315206910}
   m_Layer: 5
-  m_Name: Coin
+  m_Name: Diamond
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &7515923536686107233
+--- !u!224 &3577097563430155857
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5275717936021542771}
+  m_GameObject: {fileID: 6552941231962354339}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -36,23 +36,23 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 300, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &4757642387059543735
+--- !u!222 &4957995317919584553
 CanvasRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5275717936021542771}
+  m_GameObject: {fileID: 6552941231962354339}
   m_CullTransparentMesh: 1
---- !u!114 &5055663082484229935
+--- !u!114 &624077383039737256
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5275717936021542771}
+  m_GameObject: {fileID: 6552941231962354339}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
@@ -60,13 +60,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: eb62f5a172b34424896f050ec6330be1, type: 3}
+  m_Sprite: {fileID: -2615874204119335, guid: b3dd63889c1624e63ac3eacc01b345d4, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -76,32 +76,17 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &7035737001251154995
+--- !u!114 &-6927088472315206910
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5275717936021542771}
+  m_GameObject: {fileID: 6552941231962354339}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad710797c4c5a49d98a053ecb28392bd, type: 3}
+  m_Script: {fileID: 11500000, guid: db280d502c580489189eb2392bae89bc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ImageAnimation
-  textureArray:
-  - {fileID: 21300000, guid: eb62f5a172b34424896f050ec6330be1, type: 3}
-  - {fileID: 21300000, guid: 2650e0ead84514d6584b1c489805849b, type: 3}
-  - {fileID: 21300000, guid: d01e76bd722e74624b61d060a14ad9aa, type: 3}
-  - {fileID: 21300000, guid: 9ff11c7476a1749ed9bbd768034d4f67, type: 3}
-  - {fileID: 21300000, guid: a346c8e4d947d45cebdd85b6c4139f5e, type: 3}
-  - {fileID: 21300000, guid: 02d3f44f545054cf1ba8ec4d04161301, type: 3}
-  - {fileID: 21300000, guid: ca5be4077337d4d069ce32f8b0768e67, type: 3}
-  - {fileID: 21300000, guid: 9aab576c1e44d44809d58b73c8ed1a6c, type: 3}
-  rendererDelegate: {fileID: 5055663082484229935}
-  useSharedMaterial: 1
-  doLoopAnimation: 1
-  StartOnAwake: 0
-  StartonEnable: 1
-  currentAnimationState: 0
-  AnimationSpeed: 5
-  delayBetweenLoop: 0
+  m_EditorClassIdentifier: Assembly-CSharp::DiamondItem
+  rect: {fileID: 3577097563430155857}
+  image: {fileID: 624077383039737256}

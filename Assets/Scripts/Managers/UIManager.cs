@@ -3,8 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
 using System.Collections;
-using System.Collections.Generic;
-using UnityEngine.EventSystems;
 
 public class UIManager : MonoBehaviour
 {
@@ -39,42 +37,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject winTextObjectPortrait;
     [SerializeField] private GameObject goodLuckObjectPortrait;
 
-    [Header("Bonus Wheel")]
-    [SerializeField] private WheelSpinController mainWheel;
-    [SerializeField] private GameObject wheelScreen;
-    [SerializeField] private Button wheelSpinButton;
-    [SerializeField] private Button wheelSpinButton2;
-    [SerializeField] private Transform wheelTitleTransform;
-    [SerializeField] private List<Transform> wheelTitleObjects = new List<Transform>();
+    [Header("Free Spins Transition")]
+    [Tooltip("Black film faded over the screen when a free-spin round ends.")]
     [SerializeField] private CanvasGroup transitionBackFilm;
-    [SerializeField] private StarFountain wheelCoinFountain;
-    [SerializeField] private Transform wheelAnticlockwiseRotatingObject;
-    [SerializeField] private float wheelRotationDuration = 8f;
-    private Tween wheelAnticlockwiseRotationTween;
-    private List<Tween> wheelTitleTweens = new List<Tween>();
-    private Dictionary<Transform, Vector3> wheelTitleInitialScales = new Dictionary<Transform, Vector3>();
-    [Header("Bonus Wheel - Portrait")]
-    [SerializeField] private Button wheelSpinButtonPortrait;
-    [SerializeField] private Button wheelSpinButtonPortrait2;
-    [SerializeField] private Transform wheelTitleTransformPortrait;
-    
-    [Header("Money Bag Bonus")]
-    [SerializeField] private MoneyBagController moneyBagController;
-
-    [Header("Universal Win Popup")]
-    [SerializeField] private GameObject universalWinPopup;
-    [SerializeField] private RectTransform universalWinPopupRect;
-    [SerializeField] private GameObject uwpCongratulationsTitle;
-    [SerializeField] private GameObject uwpYouWonSubtitle;
-    [SerializeField] private GameObject uwpBigWinTitle;
-    [SerializeField] private TMP_Text uwpWinAmountText;
-    [SerializeField] private TMP_Text uwpFreeSpinCountText;
-    [SerializeField] private GameObject uwpFreeSpinObject;
-    [SerializeField] private Button uwpTakeButton;
-    [Header("Universal Win Popup - Portrait")]
-    [SerializeField] private Button uwpTakeButtonPortrait;
-    [Header("Universal Win Popup - Star Particle Burst")]
-    [SerializeField] private StarFountain starFountain;
 
     [Header("Spin Button")]
     [SerializeField] private Button spinButton;
@@ -225,15 +190,10 @@ public class UIManager : MonoBehaviour
     private bool isPageAnimating;
     [Header("UI State")]
     private double currentWinDisplayValue = 0;
+    // Raised while a win popup owns the screen. WinPopupController drives it through
+    // OnWinPopupOpened / OnWinPopupClosed, and GameManager's round loop parks on it.
     private bool isSpecialWinActive = false;
     public bool IsSpecialWinActive => isSpecialWinActive;
-    public System.Action OnSpecialWinComplete;
-
-    // Universal Win Popup state
-    private System.Action universalWinPopupCallback;
-    private Coroutine uwpAutoCloseCoroutine;
-    private Tween uwpWinTween;
-    [SerializeField] private float uwpAutoCloseDelay = 5f;
 
     private void Awake()
     {
@@ -272,31 +232,6 @@ public class UIManager : MonoBehaviour
         RegisterFullscreenListener();
     }
 
-    private void OnEnable()
-    {
-        OrientationChange.OnOrientationChanged += HandleOrientationChangedForWheelButtons;
-    }
-
-    private void OnDisable()
-    {
-        OrientationChange.OnOrientationChanged -= HandleOrientationChangedForWheelButtons;
-    }
-
-    private void HandleOrientationChangedForWheelButtons(OrientationChange.OrientationMode mode, int width, int height)
-    {
-        UpdateNewWheelSpinButtonsVisibility();
-    }
-
-    private void UpdateNewWheelSpinButtonsVisibility()
-    {
-        if (wheelScreen == null || !wheelScreen.activeInHierarchy || wheelSpinTriggered) return;
-
-        var oc = Object.FindFirstObjectByType<OrientationChange>();
-        bool isPortraitMode = (oc != null && oc.CurrentMode == OrientationChange.OrientationMode.MobilePortrait);
-
-        if (wheelSpinButton2) wheelSpinButton2.gameObject.SetActive(!isPortraitMode);
-        if (wheelSpinButtonPortrait2) wheelSpinButtonPortrait2.gameObject.SetActive(isPortraitMode);
-    }
 
     private void InitializeUI()
     {
@@ -313,15 +248,7 @@ public class UIManager : MonoBehaviour
         SetGameObjectActive(settingsPanel, settingsPanelPortrait, false);
         if (gameRulesPanel) gameRulesPanel.SetActive(false);
         if (guidePanel) guidePanel.SetActive(false);
-        if (uwpWinTween != null) { uwpWinTween.Kill(); uwpWinTween = null; }
-        if (starFountain != null) starFountain.StopStarBurst();
-        if (universalWinPopup) universalWinPopup.SetActive(false);
-
         if (freeSpinCountContainer) freeSpinCountContainer.SetActive(false);
-        StopWheelBonusEffects();
-        if (wheelScreen) wheelScreen.SetActive(false);
-        SetButtonActive(wheelSpinButton, wheelSpinButtonPortrait, false);
-        SetButtonActive(wheelSpinButton2, wheelSpinButtonPortrait2, false);
         if (transitionBackFilm) transitionBackFilm.gameObject.SetActive(false);
         UpdatePingDisplay("-- ms");
     }
@@ -457,15 +384,6 @@ public class UIManager : MonoBehaviour
         if (shrinkButton) shrinkButton.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); OnShrink(); });
         if (expandButtonPortrait) expandButtonPortrait.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); OnExpand(); });
         if (shrinkButtonPortrait) shrinkButtonPortrait.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); OnShrink(); });
-
-        if (wheelSpinButton) wheelSpinButton.onClick.AddListener(() => { AudioManager.Instance?.PlayWheelStart(); OnWheelSpinClicked(); });
-        if (wheelSpinButton2) wheelSpinButton2.onClick.AddListener(() => { AudioManager.Instance?.PlayWheelStart(); OnWheelSpinClicked(); });
-        if (wheelSpinButtonPortrait) wheelSpinButtonPortrait.onClick.AddListener(() => { AudioManager.Instance?.PlayWheelStart(); OnWheelSpinClicked(); });
-        if (wheelSpinButtonPortrait2) wheelSpinButtonPortrait2.onClick.AddListener(() => { AudioManager.Instance?.PlayWheelStart(); OnWheelSpinClicked(); });
-
-        // Take button for universal win popup
-        if (uwpTakeButton) uwpTakeButton.onClick.AddListener(OnUniversalWinTakeButtonClicked);
-        if (uwpTakeButtonPortrait) uwpTakeButtonPortrait.onClick.AddListener(OnUniversalWinTakeButtonClicked);
 
         // Speed buttons setup (Three-layer Toggle)
         if (normalSpeedButton) normalSpeedButton.onClick.AddListener(() => { AudioManager.Instance?.PlayButton(); SetSpeedMode(SpinSpeed.Turbo); });
@@ -649,10 +567,33 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    internal void TriggerBigWinPopup(SpinResult result, System.Action onComplete = null)
+    /// <summary>
+    /// Called by WinPopupController the instant its popup starts. Raises the same
+    /// isSpecialWinActive flag the CNY universal popup uses, which is what parks
+    /// GameManager's round loop and keeps EnableControlsAfterWinAnimation from handing spin
+    /// back behind the popup's back.
+    /// </summary>
+    internal void OnWinPopupOpened()
     {
-        double winAmount = (result != null) ? result.winAmount : 0;
-        ShowUniversalWinPopup(WinPopupType.BigWin, winAmount, 0, onComplete);
+        isSpecialWinActive = true;
+        DisableControlsDuringWinAnimation();
+    }
+
+    /// <summary>Paired with <see cref="OnWinPopupOpened"/>: drops the gate and returns spin.</summary>
+    internal void OnWinPopupClosed()
+    {
+        isSpecialWinActive = false;
+        EnableControlsAfterWinAnimation();
+    }
+
+    /// <summary>
+    /// Drop the gate WITHOUT touching the controls. For a popup torn down by the next spin:
+    /// that spin has already set the buttons up for spinning, and restoring "win presentation
+    /// finished" state on top of it would put the idle spin button back mid-spin.
+    /// </summary>
+    internal void OnWinPopupCancelled()
+    {
+        isSpecialWinActive = false;
     }
 
     internal void DisableControlsDuringWinAnimation()
@@ -1130,10 +1071,11 @@ public class UIManager : MonoBehaviour
 
     internal void OnFreeSpinsTriggered(int spinsAwarded)
     {
-        ShowUniversalWinPopup(WinPopupType.FreeSpinTrigger, 0, spinsAwarded, () =>
-        {
-            StartFreeSpinsSequence(spinsAwarded);
-        });
+        // [POPUP TODO] The CNY universal popup announced the award here and only started the
+        // round once the player pressed Take. It has been deleted along with the rest of the
+        // CNY UI, so the round starts immediately for now. Re-add the beat as a
+        // WinPopupController tier once the Rich Piggies free-spin popup is authored.
+        StartFreeSpinsSequence(spinsAwarded);
     }
 
     private void StartFreeSpinsSequence(int spinsAwarded)
@@ -1154,10 +1096,10 @@ public class UIManager : MonoBehaviour
         initialFreeSpins = 0;
         totalFreeSpinsAwarded = 0;
 
-        ShowUniversalWinPopup(WinPopupType.FreeSpinComplete, serverTotalRoundWin, 0, () =>
-        {
-            StartCoroutine(EndFreeSpinsTransitionSequence());
-        });
+        // [POPUP TODO] As above — the round-total popup went with the CNY UI, so the
+        // transition back to the base game runs straight away. serverTotalRoundWin is left
+        // as a parameter because that popup is what will need it.
+        StartCoroutine(EndFreeSpinsTransitionSequence());
     }
 
     private IEnumerator EndFreeSpinsTransitionSequence()
@@ -1440,623 +1382,6 @@ public class UIManager : MonoBehaviour
         else if (gameManager != null)
         {
             gameManager.ExitGame();
-        }
-    }
-
-    #endregion
-
-    #region Bonus Game
-
-    internal void TriggerUSpinBonus(USpinResultData resultData, System.Action onComplete)
-    {
-        StartCoroutine(USpinBonusSequence(resultData, onComplete));
-    }
-
-    private bool wheelSpinTriggered = false;
-
-    private void OnWheelSpinClicked()
-    {
-        if (wheelSpinTriggered) return;
-        wheelSpinTriggered = true;
-        SetButtonInteractable(wheelSpinButton, wheelSpinButtonPortrait, false);
-        SetButtonInteractable(wheelSpinButton2, wheelSpinButtonPortrait2, false);
-        SetButtonActive(wheelSpinButton2, wheelSpinButtonPortrait2, false);
-    }
-
-    private IEnumerator USpinBonusSequence(USpinResultData resultData, System.Action onComplete)
-    {
-        // 1. Fade in back film
-        if (transitionBackFilm != null)
-        {
-            transitionBackFilm.gameObject.SetActive(true);
-            transitionBackFilm.alpha = 0f;
-            yield return transitionBackFilm.DOFade(1f, 0.5f).WaitForCompletion();
-            yield return new WaitForSeconds(0.5f);
-        }
-        
-        // 2. Open spin wheel screen
-        wheelSpinTriggered = false;
-        if (wheelScreen) wheelScreen.SetActive(true);
-        StartWheelBonusEffects();
-        
-        // Hide normal spin/stop buttons, show wheel spin button
-        SetSpinStopButtonStates(isSpinningState: false, isInteractable: false);
-        SetButtonActive(spinButton, spinButtonPortrait, false);
-        SetButtonActive(autoSpinStopButton, autoSpinStopButtonPortrait, false);
-        SetButtonActive(wheelSpinButton, wheelSpinButtonPortrait, true);
-        SetButtonInteractable(wheelSpinButton, wheelSpinButtonPortrait, true);
-        UpdateNewWheelSpinButtonsVisibility();
-        SetButtonInteractable(wheelSpinButton2, wheelSpinButtonPortrait2, true);
-
-        // 3. Fade out back film
-        if (transitionBackFilm != null)
-        {
-            yield return transitionBackFilm.DOFade(0f, 0.5f).WaitForCompletion();
-            transitionBackFilm.gameObject.SetActive(false);
-        }
-
-        // 4. Wait for user to click wheel spin
-        yield return new WaitUntil(() => wheelSpinTriggered);
-
-        // 5. Spin Wheel
-        int mainTargetIndex = resultData.sliceIndex;
-        bool mainSpinDone = false;
-        if (mainWheel != null)
-        {
-            mainWheel.SpinToIndex(mainTargetIndex, () => mainSpinDone = true);
-        }
-        else
-        {
-            mainSpinDone = true;
-        }
-        yield return new WaitUntil(() => mainSpinDone);
-        yield return new WaitForSeconds(0.5f);
-
-        // 6. Handle the two possibilities
-        if (resultData.type == "FREE_GAMES")
-        {
-            // Show freespin trigger popup BEFORE backfilm transition
-            bool takePressed = false;
-            ShowUniversalWinPopup(WinPopupType.FreeSpinTrigger, 0, resultData.freeGamesAwarded, () =>
-            {
-                takePressed = true;
-            });
-            yield return new WaitUntil(() => takePressed);
-
-            // Blackfilm transition fade in to cover the screen
-            if (transitionBackFilm != null)
-            {
-                transitionBackFilm.gameObject.SetActive(true);
-                transitionBackFilm.alpha = 0f;
-                yield return transitionBackFilm.DOFade(1f, 0.5f).WaitForCompletion();
-                yield return new WaitForSeconds(0.5f);
-            }
-            
-            // Turn off wheel screen behind blackfilm
-            StopWheelBonusEffects();
-            if (wheelScreen) wheelScreen.SetActive(false);
-            
-            // Setup free spin mode/UI behind blackfilm
-            if (gameManager != null)
-            {
-                if (gameManager.isInFreeSpins)
-                {
-                    gameManager.freeSpinsRemaining += resultData.freeGamesAwarded;
-                    int updatedTotalSpins = totalFreeSpinsAwarded + resultData.freeGamesAwarded;
-                    UpdateFreeSpinCount(gameManager.freeSpinsUsed, updatedTotalSpins);
-                }
-                else
-                {
-                    if (gameManager.isAutoPlaying)
-                    {
-                        int prevTotal = gameManager.autoPlayTotalRounds;
-                        int prevRemaining = gameManager.autoPlayRemainingRounds;
-                        gameManager.StopAutoPlay();
-                        gameManager.wasAutoPlayingBeforeFreeSpins = true;
-                        gameManager.savedAutoPlayTotalRounds = prevTotal;
-                        gameManager.savedAutoPlayRemainingRounds = (prevTotal != -1) ? (prevRemaining - 1) : -1;
-                    }
-
-                    gameManager.isInFreeSpins = true;
-                    gameManager.freeSpinsRemaining = resultData.freeGamesAwarded;
-                    gameManager.freeSpinsUsed = 0;
-                    initialFreeSpins = resultData.freeGamesAwarded;
-                    totalFreeSpinsAwarded = resultData.freeGamesAwarded;
-                    
-                    if (gameLogoObject) gameLogoObject.SetActive(false);
-                    UpdateFreeSpinCount(0, resultData.freeGamesAwarded);
-                    UpdateWinDisplay(0);
-                    
-                    SetSpinStopButtonStates(isSpinningState: true, isInteractable: false);
-                    SetBetControlsEnabled(false);
-                    SetButtonInteractable(settingsOpenButton, settingsOpenButtonPortrait, true);
-
-                    if (gameManager.lastResult != null && gameManager.lastResult.freeSpinData != null)
-                    {
-                        gameManager.lastResult.freeSpinData.isTriggered = false;
-                    }
-                }
-            }
-
-            // Blackfilm transition fade out revealing free spin setup
-            if (transitionBackFilm != null)
-            {
-                yield return transitionBackFilm.DOFade(0f, 0.5f).WaitForCompletion();
-                transitionBackFilm.gameObject.SetActive(false);
-            }
-        }
-        else // MULTIPLIER / CREDITS
-        {
-            bool takePressed = false;
-            ShowUniversalWinPopup(WinPopupType.RegularWin, resultData.winInCash, 0, () =>
-            {
-                takePressed = true;
-            });
-            yield return new WaitUntil(() => takePressed);
-
-            if (gameManager != null && gameManager.lastResult != null)
-            {
-                double prevBalance = gameManager.playerData.balance;
-                gameManager.playerData.balance += resultData.winInCash;
-
-                double targetWin = gameManager.isInFreeSpins
-                    ? gameManager.lastResult.serverTotalRoundWin
-                    : (gameManager.lastResult.grandTotalWin > 0 ? gameManager.lastResult.grandTotalWin : (gameManager.lastResult.winAmount + resultData.winInCash));
-                AnimateWinUpdate(targetWin);
-                AnimateBalanceUpdate(gameManager.playerData.balance, prevBalance);
-            }
-            
-            if (transitionBackFilm != null)
-            {
-                transitionBackFilm.gameObject.SetActive(true);
-                transitionBackFilm.alpha = 0f;
-                yield return transitionBackFilm.DOFade(1f, 0.5f).WaitForCompletion();
-                yield return new WaitForSeconds(0.5f);
-            }
-            
-            StopWheelBonusEffects();
-            if (wheelScreen) wheelScreen.SetActive(false);
-            
-            if (transitionBackFilm != null)
-            {
-                yield return transitionBackFilm.DOFade(0f, 0.5f).WaitForCompletion();
-                transitionBackFilm.gameObject.SetActive(false);
-            }
-        }
-
-        SetButtonActive(wheelSpinButton, wheelSpinButtonPortrait, false);
-        SetButtonActive(wheelSpinButton2, wheelSpinButtonPortrait2, false);
-        if (gameManager == null || !gameManager.isInFreeSpins)
-        {
-            if (gameManager != null && gameManager.isAutoPlaying)
-            {
-                OnAutoPlayStarted();
-            }
-            else
-            {
-                SetSpinStopButtonStates(isSpinningState: false, isInteractable: true);
-            }
-        }
-        else
-        {
-            SetSpinStopButtonStates(isSpinningState: true, isInteractable: false);
-        }
-
-        onComplete?.Invoke();
-    }
-
-    internal void TriggerMoneyBagBonus(MoneyBagResultData resultData, System.Action onComplete)
-    {
-        StartCoroutine(MoneyBagBonusSequence(resultData, onComplete));
-    }
-
-    private IEnumerator MoneyBagBonusSequence(MoneyBagResultData resultData, System.Action onComplete)
-    {
-        if (transitionBackFilm != null)
-        {
-            transitionBackFilm.gameObject.SetActive(true);
-            transitionBackFilm.alpha = 0f;
-            yield return transitionBackFilm.DOFade(1f, 0.5f).WaitForCompletion();
-            yield return new WaitForSeconds(0.5f);
-        }
-        
-        SetButtonActive(autoSpinStopButton, autoSpinStopButtonPortrait, false);
-        SetButtonActive(stopButton, stopButtonPortrait, false);
-        SetButtonActive(spinButton, spinButtonPortrait, true);
-        SetButtonInteractable(spinButton, spinButtonPortrait, false);
-
-        bool moneyBagDone = false;
-        
-        if (moneyBagController != null)
-        {
-            moneyBagController.gameObject.SetActive(true);
-            moneyBagController.StartMoneyBagBonus(resultData, () => moneyBagDone = true);
-
-            if (transitionBackFilm != null)
-            {
-                yield return transitionBackFilm.DOFade(0f, 0.5f).WaitForCompletion();
-                transitionBackFilm.gameObject.SetActive(false);
-            }
-
-            yield return new WaitUntil(() => moneyBagDone);
-
-            bool takePressed = false;
-            ShowUniversalWinPopup(WinPopupType.MoneyBagCollect, resultData.winInCash, 0, () =>
-            {
-                takePressed = true;
-            });
-            yield return new WaitUntil(() => takePressed);
-
-            if (gameManager != null && gameManager.lastResult != null)
-            {
-                double prevBalance = gameManager.playerData.balance;
-                gameManager.playerData.balance += resultData.winInCash;
-
-                double targetWin = gameManager.isInFreeSpins
-                    ? gameManager.lastResult.serverTotalRoundWin
-                    : (gameManager.lastResult.grandTotalWin > 0 ? gameManager.lastResult.grandTotalWin : (gameManager.lastResult.winAmount + resultData.winInCash));
-                AnimateWinUpdate(targetWin);
-                AnimateBalanceUpdate(gameManager.playerData.balance, prevBalance);
-            }
-            
-            if (transitionBackFilm != null)
-            {
-                transitionBackFilm.gameObject.SetActive(true);
-                transitionBackFilm.alpha = 0f;
-                yield return transitionBackFilm.DOFade(1f, 0.5f).WaitForCompletion();
-                yield return new WaitForSeconds(0.5f);
-            }
-
-            if (moneyBagController != null)
-            {
-                moneyBagController.gameObject.SetActive(false);
-            }
-        }
-        else
-        {
-            moneyBagDone = true;
-            Debug.LogError("MoneyBagController is not assigned in UIManager!");
-        }
-
-        if (transitionBackFilm != null)
-        {
-            yield return transitionBackFilm.DOFade(0f, 0.5f).WaitForCompletion();
-            transitionBackFilm.gameObject.SetActive(false);
-        }
-
-        if (gameManager != null && gameManager.isInFreeSpins)
-        {
-            SetSpinStopButtonStates(isSpinningState: true, isInteractable: false);
-        }
-        else if (gameManager != null && gameManager.isAutoPlaying)
-        {
-            OnAutoPlayStarted();
-        }
-        else
-        {
-            SetSpinStopButtonStates(isSpinningState: false, isInteractable: true);
-        }
-
-        onComplete?.Invoke();
-    }
-
-    #endregion
-
-    #region Universal Win Popup
-
-    internal void ShowUniversalWinPopup(WinPopupType type, double winAmount, int freeSpinCount = 0, System.Action onTakePressed = null)
-    {
-        if (universalWinPopup == null) return;
-
-        AudioManager.Instance?.PlayWinObjectBg();
-        isSpecialWinActive = true;
-        universalWinPopupCallback = onTakePressed;
-
-        if (uwpWinTween != null)
-        {
-            uwpWinTween.Kill();
-            uwpWinTween = null;
-        }
-
-        if (uwpCongratulationsTitle) uwpCongratulationsTitle.SetActive(false);
-        if (uwpYouWonSubtitle) uwpYouWonSubtitle.SetActive(false);
-        if (uwpBigWinTitle) uwpBigWinTitle.SetActive(false);
-        if (uwpWinAmountText) uwpWinAmountText.gameObject.SetActive(false);
-        if (uwpFreeSpinCountText) uwpFreeSpinCountText.gameObject.SetActive(false);
-        if (uwpFreeSpinObject) uwpFreeSpinObject.SetActive(false);
-
-        switch (type)
-        {
-            case WinPopupType.FreeSpinTrigger:
-                if (uwpCongratulationsTitle) uwpCongratulationsTitle.SetActive(true);
-                if (uwpYouWonSubtitle) uwpYouWonSubtitle.SetActive(true);
-                if (uwpFreeSpinCountText)
-                {
-                    uwpFreeSpinCountText.gameObject.SetActive(true);
-                    uwpFreeSpinCountText.text = freeSpinCount.ToString();
-                }
-                if (uwpFreeSpinObject) uwpFreeSpinObject.SetActive(true);
-                break;
-
-            case WinPopupType.RegularWin:
-                if (uwpCongratulationsTitle) uwpCongratulationsTitle.SetActive(true);
-                if (uwpYouWonSubtitle) uwpYouWonSubtitle.SetActive(true);
-                if (uwpWinAmountText)
-                {
-                    uwpWinAmountText.gameObject.SetActive(true);
-                    uwpWinAmountText.text = FormatAmount(winAmount);
-                }
-                break;
-
-            case WinPopupType.BigWin:
-                if (uwpBigWinTitle) uwpBigWinTitle.SetActive(true);
-                if (uwpWinAmountText)
-                {
-                    uwpWinAmountText.gameObject.SetActive(true);
-                    uwpWinAmountText.text = FormatAmount(winAmount);
-                    RectTransform bigWinAmountRect = uwpWinAmountText.GetComponent<RectTransform>();
-                    if (bigWinAmountRect != null)
-                    {
-                        Vector2 pos = bigWinAmountRect.anchoredPosition;
-                        pos.y = 0f;
-                        bigWinAmountRect.anchoredPosition = pos;
-                    }
-                }
-                break;
-
-            case WinPopupType.MoneyBagCollect:
-                if (uwpCongratulationsTitle) uwpCongratulationsTitle.SetActive(true);
-                if (uwpYouWonSubtitle) uwpYouWonSubtitle.SetActive(true);
-                if (uwpWinAmountText)
-                {
-                    uwpWinAmountText.gameObject.SetActive(true);
-                    uwpWinAmountText.text = FormatAmount(winAmount);
-                }
-                break;
-
-            case WinPopupType.FreeSpinComplete:
-                if (uwpCongratulationsTitle) uwpCongratulationsTitle.SetActive(true);
-                if (uwpYouWonSubtitle) uwpYouWonSubtitle.SetActive(true);
-                if (uwpWinAmountText)
-                {
-                    uwpWinAmountText.gameObject.SetActive(true);
-                    uwpWinAmountText.text = FormatAmount(winAmount);
-                }
-                break;
-        }
-
-        if (type != WinPopupType.BigWin && uwpWinAmountText)
-        {
-            RectTransform winAmountRect = uwpWinAmountText.GetComponent<RectTransform>();
-            if (winAmountRect != null)
-            {
-                Vector2 pos = winAmountRect.anchoredPosition;
-                pos.y = -90f;
-                winAmountRect.anchoredPosition = pos;
-            }
-        }
-
-        SetSpinStopButtonStates(isSpinningState: false, isInteractable: false);
-
-        bool showTakeButton = (type != WinPopupType.BigWin);
-        SetButtonActive(uwpTakeButton, uwpTakeButtonPortrait, showTakeButton);
-        SetButtonInteractable(uwpTakeButton, uwpTakeButtonPortrait, showTakeButton);
-
-        universalWinPopup.SetActive(true);
-        if (universalWinPopupRect)
-        {
-            universalWinPopupRect.localScale = Vector3.zero;
-            Sequence openSeq = DOTween.Sequence();
-            openSeq.Append(universalWinPopupRect.DOScale(1.2f, 0.5f).SetEase(Ease.OutCubic));
-            openSeq.Append(universalWinPopupRect.DOScale(1f, 0.3f).SetEase(Ease.InOutSine));
-        }
-
-        if (starFountain != null) starFountain.PlayStarBurst();
-
-        if (uwpWinAmountText != null && uwpWinAmountText.gameObject.activeSelf && winAmount > 0)
-        {
-            int decimals = GetDecimalPlaces(winAmount);
-            string formatStr = decimals > 0 ? "0." + new string('0', decimals) : "0";
-
-            uwpWinAmountText.text = (0.0).ToString(formatStr);
-
-            float countUpDuration = (type == WinPopupType.BigWin) ? 1.5f : 1.0f;
-
-            uwpWinTween = DOVirtual.Float(0f, (float)winAmount, countUpDuration, (val) =>
-            {
-                if (uwpWinAmountText != null)
-                {
-                    uwpWinAmountText.text = val.ToString(formatStr);
-                }
-            }).OnComplete(() =>
-            {
-                if (uwpWinAmountText != null)
-                {
-                    uwpWinAmountText.text = FormatAmount(winAmount);
-                }
-                uwpWinTween = null;
-            });
-        }
-
-        if (uwpAutoCloseCoroutine != null) StopCoroutine(uwpAutoCloseCoroutine);
-        uwpAutoCloseCoroutine = StartCoroutine(AutoCloseUniversalWinPopup());
-    }
-
-    private int GetDecimalPlaces(double amount)
-    {
-        double rounded = System.Math.Round(amount, 4);
-        string str = rounded.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        int dotIndex = str.IndexOf('.');
-        if (dotIndex < 0) return 0;
-        return str.Length - dotIndex - 1;
-    }
-
-    private IEnumerator AutoCloseUniversalWinPopup()
-    {
-        yield return new WaitForSeconds(uwpAutoCloseDelay);
-        uwpAutoCloseCoroutine = null;
-        CloseUniversalWinPopup();
-    }
-
-    private void OnUniversalWinTakeButtonClicked()
-    {
-        AudioManager.Instance?.StopWinObjectBg();
-        AudioManager.Instance?.PlayTakeButton();
-        CloseUniversalWinPopup();
-    }
-
-    private void CloseUniversalWinPopup()
-    {
-        if (universalWinPopup == null || !universalWinPopup.activeSelf) return;
-
-        AudioManager.Instance?.StopWinObjectBg();
-
-        if (uwpWinTween != null)
-        {
-            uwpWinTween.Kill();
-            uwpWinTween = null;
-        }
-
-        if (starFountain != null) starFountain.StopStarBurst();
-
-        if (uwpAutoCloseCoroutine != null)
-        {
-            StopCoroutine(uwpAutoCloseCoroutine);
-            uwpAutoCloseCoroutine = null;
-        }
-
-        System.Action callback = universalWinPopupCallback;
-        universalWinPopupCallback = null;
-
-        SetButtonInteractable(uwpTakeButton, uwpTakeButtonPortrait, false);
-
-        if (universalWinPopupRect)
-        {
-            Sequence closeSeq = DOTween.Sequence();
-            closeSeq.Append(universalWinPopupRect.DOScale(1.1f, 0.1f));
-            closeSeq.Append(universalWinPopupRect.DOScale(0f, 0.2f).SetEase(Ease.InBack));
-            closeSeq.OnComplete(() =>
-            {
-                universalWinPopupRect.localScale = Vector3.one;
-                universalWinPopup.SetActive(false);
-
-                SetButtonActive(uwpTakeButton, uwpTakeButtonPortrait, false);
-                isSpecialWinActive = false;
-                EnableControlsAfterWinAnimation();
-
-                callback?.Invoke();
-            });
-        }
-        else
-        {
-            universalWinPopup.SetActive(false);
-            SetButtonActive(uwpTakeButton, uwpTakeButtonPortrait, false);
-            isSpecialWinActive = false;
-            EnableControlsAfterWinAnimation();
-
-            callback?.Invoke();
-        }
-    }
-
-    #endregion
-
-    #region Bonus Wheel Effects
-
-    internal void StartWheelBonusEffects()
-    {
-        var oc = Object.FindFirstObjectByType<OrientationChange>();
-        
-        if (wheelCoinFountain != null)
-        {
-            wheelCoinFountain.PlayStarBurst();
-        }
-
-        if (wheelAnticlockwiseRotatingObject != null)
-        {
-            if (wheelAnticlockwiseRotationTween != null)
-            {
-                wheelAnticlockwiseRotationTween.Kill();
-                wheelAnticlockwiseRotationTween = null;
-            }
-
-            // Continuous anticlockwise rotation (positive Z rotation 0 to 360 degrees)
-            wheelAnticlockwiseRotationTween = wheelAnticlockwiseRotatingObject
-                .DORotate(new Vector3(0f, 0f, 360f), wheelRotationDuration, RotateMode.FastBeyond360)
-                .SetEase(Ease.Linear)
-                .SetLoops(-1, LoopType.Incremental);
-        }
-
-        // Title object popping loop animation (1 -> 1.2 -> 1 scale in loop)
-        List<Transform> titlesToAnimate = new List<Transform>();
-        if (wheelTitleTransform != null) titlesToAnimate.Add(wheelTitleTransform);
-        if (wheelTitleTransformPortrait != null) titlesToAnimate.Add(wheelTitleTransformPortrait);
-        if (wheelTitleObjects != null)
-        {
-            foreach (var t in wheelTitleObjects)
-            {
-                if (t != null && !titlesToAnimate.Contains(t)) titlesToAnimate.Add(t);
-            }
-        }
-
-        if (wheelTitleTweens == null) wheelTitleTweens = new List<Tween>();
-        else wheelTitleTweens.Clear();
-
-        if (wheelTitleInitialScales == null) wheelTitleInitialScales = new Dictionary<Transform, Vector3>();
-
-        foreach (var t in titlesToAnimate)
-        {
-            if (t == null) continue;
-            t.DOKill();
-            if (!wheelTitleInitialScales.ContainsKey(t))
-            {
-                wheelTitleInitialScales[t] = t.localScale;
-            }
-            Vector3 initScale = wheelTitleInitialScales[t];
-            t.localScale = initScale;
-
-            Tween titleTween = t.DOScale(initScale * 1.2f, 0.6f)
-                .SetEase(Ease.InOutSine)
-                .SetLoops(-1, LoopType.Yoyo);
-
-            wheelTitleTweens.Add(titleTween);
-        }
-    }
-
-    internal void StopWheelBonusEffects()
-    {
-        if (wheelCoinFountain != null)
-        {
-            wheelCoinFountain.StopStarBurst();
-        }
-
-        if (wheelAnticlockwiseRotationTween != null)
-        {
-            wheelAnticlockwiseRotationTween.Kill();
-            wheelAnticlockwiseRotationTween = null;
-        }
-
-        if (wheelTitleTweens != null)
-        {
-            foreach (var tween in wheelTitleTweens)
-            {
-                if (tween != null && tween.IsActive())
-                {
-                    tween.Kill();
-                }
-            }
-            wheelTitleTweens.Clear();
-        }
-
-        if (wheelTitleInitialScales != null)
-        {
-            foreach (var kvp in wheelTitleInitialScales)
-            {
-                if (kvp.Key != null)
-                {
-                    kvp.Key.DOKill();
-                    kvp.Key.localScale = kvp.Value;
-                }
-            }
         }
     }
 

@@ -10,16 +10,11 @@ public class GameManager : MonoBehaviour
   [SerializeField] internal PigMeterController pigMeters;
   [SerializeField] private PopupManager popupManager;
   [SerializeField] private SlotView slotView;
-  [SerializeField] internal WheelSpinController wheelController;
 
   [Header("Spin Settings")]
   [SerializeField] private float normalSpinDuration = 3.5f;
   [SerializeField] private float turboSpinDuration = 2.0f;
   [SerializeField] private float quickSpinCycleDuration = 0.8f;
-
-  [Header("Win Settings")]
-  [SerializeField] private double bigWinMultiplierThreshold = 500.0;
-  public double BigWinMultiplierThreshold => bigWinMultiplierThreshold;
 
   internal GameConfig gameConfig;
   internal PlayerData playerData;
@@ -48,7 +43,6 @@ public class GameManager : MonoBehaviour
 
   private Coroutine spinCoroutine;
   private bool stopRequested;
-  private bool waitingForSpecialWin;
 
   #region Initialization
 
@@ -71,13 +65,6 @@ public class GameManager : MonoBehaviour
     // if (initialMatrix != null && slotView != null)
     // {
     //     slotView.SetInitialMatrix(initialMatrix);
-    // }
-
-    // [CNY] USpin bonus wheel — no Rich Piggies equivalent. Kept wired so the scene
-    // reference and WheelSpinController still compile; re-purpose or delete later.
-    // if (wheelController != null && gameConfig.uSpinSegments != null)
-    // {
-    //   wheelController.OverrideSegmentsWithData(gameConfig.uSpinSegments);
     // }
 
     // Seed the pig / jackpot meters from the init payload's live state. Done after
@@ -305,8 +292,7 @@ public class GameManager : MonoBehaviour
   {
     if (lastResult != null)
     {
-      double featureDeferredWin = lastResult.GetTotalFeatureDeferredWins();
-      double reelStopBalance = lastResult.playerData != null ? (lastResult.playerData.balance - featureDeferredWin) : 0;
+      double reelStopBalance = lastResult.playerData != null ? lastResult.playerData.balance : 0;
 
       playerData = new PlayerData
       {
@@ -315,12 +301,24 @@ public class GameManager : MonoBehaviour
       };
     }
 
-    // The HUD updates and the controls come back straight away; the win presentation then
-    // plays out on top and does not gate the return to Idle. SlotView fires
-    // OnWinAnimationComplete at the end of its stage 1.
+    // The HUD updates straight away and the state returns to Idle; the win presentation
+    // plays out on top and does not gate that. SlotView fires OnWinAnimationComplete at the
+    // end of its stage 1. Controls are the exception — see below.
     uiManager.OnSpinStopping(lastResult);
     uiManager.EnableControlsAfterWinAnimation();
     uiManager.OnSpinCompleted(lastResult);
+
+    // A winning spin keeps its controls locked through the presentation. The win popup only
+    // opens a couple of seconds in (winPresentationDelay plus one stage-1 pass), and handing
+    // spin back in the meantime lets the player cut a popup they never saw. This has to come
+    // AFTER OnSpinCompleted, which re-enables the spin button itself.
+    //
+    // The unlock is in ProcessSpecialFeaturesAfterWin rather than here, so it happens exactly
+    // once whether or not a popup actually appears — a win with no popup would otherwise
+    // stay locked forever.
+    if (lastResult != null && lastResult.winAmount > 0)
+      uiManager.DisableControlsDuringWinAnimation();
+
     currentState = GameState.Idle;
 
     if (lastResult != null && lastResult.winLines != null && lastResult.winLines.Count > 0)
@@ -331,96 +329,32 @@ public class GameManager : MonoBehaviour
     {
       OnWinAnimationComplete();
     }
-
-    // [CNY] Big-win popup. Threshold-gated control lock plus TriggerWinPopupWithDelay,
-    // which parks the loop on waitingForSpecialWin until the popup resolves. The popup is
-    // still CNY-styled, so it stays off until it is re-authored for Rich Piggies.
-    //
-    // double multiplier = GetTotalPay() > 0 ? (lastResult.winAmount / GetTotalPay()) : 0;
-    // if (multiplier >= bigWinMultiplierThreshold)
-    // {
-    //   uiManager.DisableControlsDuringWinAnimation();
-    //   StartCoroutine(TriggerWinPopupWithDelay(1.5f, lastResult));
-    // }
-  }
-
-  private IEnumerator TriggerWinPopupWithDelay(float delay, SpinResult result)
-  {
-    double totalPay = GetTotalPay();
-    double multiplier = totalPay > 0 ? (result.winAmount / totalPay) : 0;
-    if (multiplier < bigWinMultiplierThreshold)
-    {
-      waitingForSpecialWin = false;
-      yield break;
-    }
-
-    waitingForSpecialWin = true;
-
-    yield return new WaitForSeconds(delay);
-
-    if (lastResult == result && multiplier >= bigWinMultiplierThreshold)
-    {
-      uiManager.TriggerBigWinPopup(result, () =>
-      {
-        waitingForSpecialWin = false;
-      });
-    }
-    else
-    {
-      waitingForSpecialWin = false;
-    }
   }
 
   private void OnWinAnimationComplete()
   {
-    // [WINLINES OFF] The big-win branch existed only to catch up the HUD after the win
-    // animation finished. OnReelsStoppedComplete now always calls OnSpinStopping itself
-    // before getting here, so re-calling it would just double-update the display.
-    //
-    // if (lastResult != null)
-    // {
-    //   double totalPay = GetTotalPay();
-    //   double multiplier = totalPay > 0 ? (lastResult.winAmount / totalPay) : 0;
-    //   if (multiplier >= bigWinMultiplierThreshold)
-    //   {
-    //     uiManager.OnSpinStopping(lastResult);
-    //   }
-    // }
-
     StartCoroutine(ProcessSpecialFeaturesAfterWin());
   }
 
   private IEnumerator ProcessSpecialFeaturesAfterWin()
   {
     // Wait for special win popup to finish before starting special features
-    while (waitingForSpecialWin || uiManager.IsSpecialWinActive)
+    while (uiManager.IsSpecialWinActive)
     {
       yield return null;
     }
 
-    // [CNY] USpin wheel and MoneyBag pick bonuses have no Rich Piggies equivalent.
-    // if (lastResult != null && lastResult.uSpinData != null && lastResult.uSpinData.triggered)
-    // {
-    //   yield return StartCoroutine(DelayUSpinTriggerResult());
-    //   yield break;
-    // }
-    //
-    // if (lastResult != null && lastResult.moneyBagData != null && lastResult.moneyBagData.triggered)
-    // {
-    //   yield return StartCoroutine(DelayMoneyBagTriggerResult());
-    //   yield break;
-    // }
+    // The single guaranteed unlock for the lock OnReelsStoppedComplete puts on a winning
+    // spin. Every path through the presentation passes here, popup or not. Redundant after
+    // OnWinPopupClosed, which has already done it — and harmless, because the method is
+    // idempotent and no-ops while any special win is still flagged.
+    uiManager.EnableControlsAfterWinAnimation();
 
-    // [CNY] Free-spin trigger presentation animated the single scatter symbol. Rich
-    // Piggies triggers on any combination of Blue / Yellow / Red piggies instead, so the
-    // presentation is re-authored once the piggy payload is defined. The free-spin STATE
-    // machine below (StartFreeSpins / EndFreeSpins) is left intact and stays inert while
-    // the server sends no freeSpinData.
-    // if (lastResult != null && lastResult.freeSpinData != null && lastResult.freeSpinData.isTriggered && !isInFreeSpins)
-    // {
-    //   yield return StartCoroutine(DelayScatterTriggerResult());
-    //   yield break;
-    // }
+    // [FREE SPINS TODO] Rich Piggies triggers free spins on any combination of Blue /
+    // Yellow / Red piggies, so the trigger presentation is net-new and lands here — animate
+    // the triggering piggies, hand off to a popup, then resume. The free-spin STATE machine
+    // below (StartFreeSpins / EndFreeSpins) is intact and stays inert while the server sends
+    // no freeSpinData.
 
     ResumeAfterSpecialFeature();
   }
@@ -437,79 +371,13 @@ public class GameManager : MonoBehaviour
     }
   }
 
-  // ==========================================================================
-  // [CNY] Feature trigger presentations. These drove the USpin wheel, the MoneyBag
-  // pick bonus and the scatter free-spin trigger — none of which exist in Rich
-  // Piggies. Commented out rather than deleted so the beat structure (animate the
-  // trigger symbols, wait, hand off to a UIManager popup, resume) can be reused for
-  // the piggy triggers and the Mystery reveal.
-  // ==========================================================================
-  // private IEnumerator DelayScatterTriggerResult()
-  // {
-  // // Play special feature trigger sound AFTER all reels have stopped
-  // AudioManager.Instance?.Play3UspinWinLineLoop();
-  //
-  // // Start scatter animations together AFTER all reels have stopped
-  // // Using 4 loops to match the 6-second delay (4 * 1.5s = 6s)
-  // slotView.AnimateAllScatters(4);
-  //
-  // // Wait for scatter hit animations to play
-  // yield return new WaitForSeconds(3.5f);
-  // ProcessSpinResult();
-  // }
-  //
-  // private IEnumerator DelayUSpinTriggerResult()
-  // {
-  // AudioManager.Instance?.Play3UspinWinLineLoop();
-  //
-  // bool animFinished = false;
-  // if (slotView != null)
-  // {
-  // slotView.AnimateUSpinWin(() =>
-  // {
-  // animFinished = true;
-  // });
-  // }
-  // else
-  // {
-  // animFinished = true;
-  // }
-  //
-  // yield return new WaitUntil(() => animFinished);
-  //
-  // uiManager.TriggerUSpinBonus(lastResult.uSpinData, () =>
-  // {
-  // AudioManager.Instance?.Stop3UspinWinLineLoop();
-  // lastResult.uSpinData.triggered = false;
-  // ResumeAfterSpecialFeature();
-  // });
-  // }
-  //
-  // private IEnumerator DelayMoneyBagTriggerResult()
-  // {
-  // AudioManager.Instance?.Play3UspinWinLineLoop();
-  //
-  // if (slotView != null)
-  // {
-  // slotView.AnimateMoneyBagWin();
-  // }
-  //
-  // yield return new WaitForSeconds(3.5f);
-  //
-  // uiManager.TriggerMoneyBagBonus(lastResult.moneyBagData, () =>
-  // {
-  // lastResult.moneyBagData.triggered = false;
-  // ResumeAfterSpecialFeature();
-  // });
-  // }
-
   private IEnumerator DelayBeforeNextRound()
   {
     float delayTime = currentSpinSpeed == SpinSpeed.QuickSpin ? 0.3f : 0.5f;
     yield return new WaitForSeconds(delayTime);
 
     // Wait for special win popup using the flag and active state
-    while (waitingForSpecialWin || uiManager.IsSpecialWinActive)
+    while (uiManager.IsSpecialWinActive)
     {
       yield return null;
     }
@@ -538,16 +406,10 @@ public class GameManager : MonoBehaviour
     {
       freeSpinsRemaining = result.serverSpinsRemaining;
       freeSpinsUsed = result.serverSpinsUsed;
-      int displayTotalSpins = result.serverTotalSpins;
-
-      if (result.uSpinData != null && result.uSpinData.triggered && result.uSpinData.freeGamesAwarded > 0)
-      {
-        // Defer adding the newly won free spins to total count until wheel spin completes and user presses Take!
-        displayTotalSpins -= result.uSpinData.freeGamesAwarded;
-        freeSpinsRemaining -= result.uSpinData.freeGamesAwarded;
-      }
-
-      uiManager.UpdateFreeSpinCount(freeSpinsUsed, displayTotalSpins);
+      // The wheel used to award extra free spins that were withheld from this count until
+      // the player pressed Take on its popup. With the wheel gone the server total is shown
+      // as-is; a Rich Piggies retrigger will need its own deferral if it awards mid-round.
+      uiManager.UpdateFreeSpinCount(freeSpinsUsed, result.serverTotalSpins);
     }
 
     if (result.winLines != null)
@@ -766,7 +628,7 @@ public class GameManager : MonoBehaviour
     yield return new WaitForSeconds(0.3f);
 
     // Wait for special win popup if it's still active or pending
-    while (waitingForSpecialWin || uiManager.IsSpecialWinActive)
+    while (uiManager.IsSpecialWinActive)
     {
       yield return null;
     }

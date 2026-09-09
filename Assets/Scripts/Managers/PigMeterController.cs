@@ -27,7 +27,10 @@ public class PigMeterController : MonoBehaviour
              "Maxi, Minor or Mini.")]
     public string tier;
 
+    [Tooltip("Rendered through SpriteNumberFormatter — both texts need a sprite asset from " +
+             "Assets/Fonts/CustomTextFonts, or they show the literal <sprite=N> tags.")]
     public TMP_Text valueText;
+
     public TMP_Text valueTextPortrait;
 
     [Tooltip("Where a jackpot coin for this tier flies to. Landscape.")]
@@ -68,10 +71,14 @@ public class PigMeterController : MonoBehaviour
   [SerializeField] private OrientationChange orientation;
 
   [Header("Blue Pig — free spins meter")]
+  [Tooltip("Rendered through SpriteNumberFormatter, so this text needs a sprite asset from " +
+           "Assets/Fonts/CustomTextFonts on it (or on its fallback list) — a plain TMP font " +
+           "shows the literal <sprite=N> tags instead of digits.")]
   [SerializeField] private TMP_Text blueMeterText;
   [SerializeField] private TMP_Text blueMeterTextPortrait;
 
   [Header("Red Pig — wild meter")]
+  [Tooltip("Sprite-number text, same wiring requirement as the blue meter.")]
   [SerializeField] private TMP_Text redMeterText;
   [SerializeField] private TMP_Text redMeterTextPortrait;
 
@@ -169,20 +176,21 @@ public class PigMeterController : MonoBehaviour
 
   #region Text writers
 
+  // Both meters are whole counts that cap at 100 (100 free spins / 100 wilds), so they go
+  // out with no decimals and no thousands separator — the sheets' '.' and ',' glyphs never
+  // come up here.
   internal void SetBlueText(int value)
   {
     cachedMeters.blue = value;
-    string text = value.ToString();
-    if (blueMeterText) blueMeterText.text = text;
-    if (blueMeterTextPortrait) blueMeterTextPortrait.text = text;
+    SpriteNumberFormatter.Apply(blueMeterText, blueMeterTextPortrait, value,
+                                maxDecimals: 0, grouping: false);
   }
 
   internal void SetRedText(int value)
   {
     cachedMeters.red = value;
-    string text = value.ToString();
-    if (redMeterText) redMeterText.text = text;
-    if (redMeterTextPortrait) redMeterTextPortrait.text = text;
+    SpriteNumberFormatter.Apply(redMeterText, redMeterTextPortrait, value,
+                                maxDecimals: 0, grouping: false);
   }
 
   /// <summary>
@@ -205,11 +213,10 @@ public class PigMeterController : MonoBehaviour
 
   private void WriteJackpotText(JackpotTierUI ui, double multiplier)
   {
-    double bet = CurrentBet();
-    string text = FormatAmount(multiplier * bet);
-
-    if (ui.valueText) ui.valueText.text = text;
-    if (ui.valueTextPortrait) ui.valueTextPortrait.text = text;
+    // maxDecimals 3 and no grouping is exactly UIManager.FormatAmount's "0.###", so a payout
+    // reads the same here as it does when it lands in the win field.
+    SpriteNumberFormatter.Apply(ui.valueText, ui.valueTextPortrait, multiplier * CurrentBet(),
+                                maxDecimals: 3, grouping: false);
   }
 
   private double CurrentBet()
@@ -219,10 +226,6 @@ public class PigMeterController : MonoBehaviour
     if (gameManager == null) return 0;
     return gameManager.currentBetAmount;
   }
-
-  // Matches UIManager.FormatAmount so meter payouts read the same as every other figure
-  // in the HUD.
-  private static string FormatAmount(double amount) => amount.ToString("0.###");
 
   #endregion
 

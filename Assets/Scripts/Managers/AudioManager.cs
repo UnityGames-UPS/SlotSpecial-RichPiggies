@@ -38,15 +38,12 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip clipGameMainBg;
     [SerializeField] private AudioClip clipBetPlusMinus;
     [SerializeField] private AudioClip clipMaxBetReached;
-    [SerializeField] private AudioClip clip3UspinWinLineLoop;
     [SerializeField] private AudioClip clipWinObjectBg;
     [SerializeField] private AudioClip clipPrimaryActionButton;
     [SerializeField] private AudioClip clipGeneralButtonClick;
     [SerializeField] private AudioClip clipPopupOpenClose;
     [SerializeField] private AudioClip clipAutoplayPanelOpen;
-    [SerializeField] private AudioClip clipFeatureOpenLoop;
     [SerializeField] private AudioClip clipFreeSpinBg;
-    [SerializeField] private AudioClip clipWheelSegmentTick;
     [SerializeField] private AudioClip clipWinLinePhase1Start;
     [SerializeField] private AudioClip clipReelStop;
 
@@ -177,21 +174,6 @@ public class AudioManager : MonoBehaviour
         PlayUISound(clipMaxBetReached);
     }
 
-    // 4. 3 USpin Win Line Loop
-    internal void Play3UspinWinLineLoop()
-    {
-        if (!_sfxEnabled || clip3UspinWinLineLoop == null) return;
-        PlayLoop(uiSource, clip3UspinWinLineLoop);
-    }
-
-    internal void Stop3UspinWinLineLoop()
-    {
-        if (uiSource != null && uiSource.clip == clip3UspinWinLineLoop)
-        {
-            StopSource(uiSource);
-        }
-    }
-
     // 5. Win Object BG (Play at Open)
     internal void PlayWinObjectBg()
     {
@@ -221,7 +203,6 @@ public class AudioManager : MonoBehaviour
     internal void PlaySpinStop()     => PlayPrimaryActionButton();
     internal void PlayTakeButton()   => PlayPrimaryActionButton();
     internal void PlayAutoplayStop() => PlayPrimaryActionButton();
-    internal void PlayWheelStart()   => PlayPrimaryActionButton();
 
     // 7. General Button Click
     internal void PlayButton()
@@ -246,41 +227,11 @@ public class AudioManager : MonoBehaviour
         PlayUISound(clipAutoplayPanelOpen != null ? clipAutoplayPanelOpen : clipPopupOpenClose);
     }
 
-    // 10. Bonus Wheel & MoneyBag Feature Open Sound (loop until feature enabled)
-    internal void PlayFeatureOpenLoop()
-    {
-        if (clipFeatureOpenLoop == null) return;
-        PlayLoop(bgMusicSource, clipFeatureOpenLoop);
-    }
-
-    internal void StopFeatureOpenLoop()
-    {
-        if (bgMusicSource != null && bgMusicSource.clip == clipFeatureOpenLoop)
-        {
-            StopBgMusic();
-            PlayBgMusic(); // Resume main BG
-        }
-    }
-
     // 11. FreeSpin BG (loop while free spin)
     internal void PlayFreeSpinBg()
     {
         if (clipFreeSpinBg == null) return;
         PlayLoop(bgMusicSource, clipFreeSpinBg);
-    }
-
-    // 12. Bonus Wheel Spin Segment Tick
-    internal void PlayWheelSegmentTick()
-    {
-        if (!_sfxEnabled || clipWheelSegmentTick == null) return;
-        if (wheelSegmentSource != null)
-        {
-            wheelSegmentSource.PlayOneShot(clipWheelSegmentTick);
-        }
-        else
-        {
-            PlayUISound(clipWheelSegmentTick);
-        }
     }
 
     // 13. Win Line Phase 1 Start

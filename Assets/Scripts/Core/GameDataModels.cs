@@ -460,24 +460,6 @@ public class SpinResult
   public double serverTotalRoundWin;
   public bool isRoundOver;
 
-  // Server-authoritative wheel data
-  public USpinResultData uSpinData;
-  public MoneyBagResultData moneyBagData;
-
-  public double GetMoneyBagWin()
-  {
-    return (moneyBagData != null && moneyBagData.triggered) ? moneyBagData.winInCash : 0;
-  }
-
-  public double GetUSpinCashWin()
-  {
-    return (uSpinData != null && uSpinData.triggered && uSpinData.type == "MULTIPLIER") ? uSpinData.winInCash : 0;
-  }
-
-  public double GetTotalFeatureDeferredWins()
-  {
-    return GetMoneyBagWin() + GetUSpinCashWin();
-  }
 }
 
 [Serializable]
@@ -515,27 +497,6 @@ public class OverlayScatterData
   public List<List<int>> positions;
 }
 
-[Serializable]
-public class USpinResultData
-{
-  public bool triggered;
-  public int sliceIndex;
-  public string type;
-  public double multiplierAwarded;
-  public int freeGamesAwarded;
-  public double winInCash;
-}
-
-[Serializable]
-public class MoneyBagResultData
-{
-  public bool triggered;
-  public int pickedIndex;
-  public List<int> revealed;
-  public int creditsAwarded;
-  public double winInCash;
-}
-
 #endregion
 
 #region Platform Communication
@@ -567,15 +528,6 @@ public enum SpinSpeed
   Normal,
   Turbo,
   QuickSpin
-}
-
-public enum WinPopupType
-{
-  RegularWin,         // Normal credit win (multiplier < 500x)
-  BigWin,             // Big win (multiplier >= 500x)
-  FreeSpinTrigger,    // Free spins awarded from wheel
-  MoneyBagCollect,    // Money bag feature collect
-  FreeSpinComplete    // All free spins completed
 }
 
 #endregion
@@ -754,8 +706,6 @@ public static class InitDataConverter
       scatterData = null,
       overlayScatterData = null,
       stickyWilds = null,
-      uSpinData = null,
-      moneyBagData = null,
 
       serverSpinsRemaining = spinsRemaining,
       serverSpinsUsed = 0,

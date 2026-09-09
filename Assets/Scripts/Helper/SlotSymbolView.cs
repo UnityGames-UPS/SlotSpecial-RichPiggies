@@ -39,7 +39,9 @@ public class SlotSymbolView : MonoBehaviour
            "by SlotView, so leave it unassigned in the prefab. Optional.")]
   [SerializeField] internal SkeletonGraphic spineGraphic;
 
-  [Tooltip("Optional per-line win amount label shown over this cell in win-line Phase 2.")]
+  [Tooltip("Optional per-line win amount label shown over this cell in win-line Phase 2. " +
+           "Drawn with SpriteNumberFormatter, so it needs a sprite asset from " +
+           "Assets/Fonts/CustomTextFonts — a plain TMP font shows the literal <sprite=N> tags.")]
   [SerializeField] internal TMPro.TMP_Text winLineText;
 
   [Header("Mystery locker")]
@@ -661,7 +663,10 @@ public class SlotSymbolView : MonoBehaviour
   {
     if (winLineText == null) return;
 
-    winLineText.text = amount.ToString("0.###");
+    // tint: true is required here and nowhere else in the meters — this label is FADED in and
+    // out below, and DOFade only writes the text colour. An untinted sprite glyph carries its
+    // own colour and would sit at full opacity through the whole fade.
+    SpriteNumberFormatter.Apply(winLineText, amount, maxDecimals: 3, grouping: false, tint: true);
     winLineText.DOKill();
 
     // Fade up from wherever the label currently is, not from zero. With a single winning

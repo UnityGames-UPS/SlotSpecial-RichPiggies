@@ -1,0 +1,99 @@
+{
+  "success": true,
+  "matrix": [
+    [
+      "1",
+      "3",
+      "8",
+      "2",
+      "3"
+    ],
+    [
+      "8",
+      "7",
+      "6",
+      "5",
+      "7"
+    ],
+    [
+      "9",
+      "8",
+      "8",
+      "9",
+      "7"
+    ]
+  ],
+  "id": "ResultData",
+  "payload": {
+    "winAmount": 0.1,
+    "lineWins": [
+      {
+        "lineIndex": 8,
+        "symbolId": 8,
+        "symbolName": "J",
+        "matchCount": 3,
+        "payout": 5,
+        "winAmount": 0.05,
+        "positions": [
+          "1,0",
+          "2,1",
+          "2,2"
+        ]
+      },
+      {
+        "lineIndex": 24,
+        "symbolId": 8,
+        "symbolName": "J",
+        "matchCount": 3,
+        "payout": 5,
+        "winAmount": 0.05,
+        "positions": [
+          "1,0",
+          "2,1",
+          "0,2"
+        ]
+      }
+    ],
+    "jackpotWin": [],
+    "triggeredFeatures": [],
+    "activeFeature": [],
+    "freeSpinsRemaining": 0,
+    "mysteryReveals": [
+      {
+        "position": [
+          0,
+          4
+        ],
+        "revealedSymbolId": 3,
+        "revealedSymbolName": "DiamondPendant"
+      }
+    ],
+    "coinOverlays": [
+      {
+        "position": [
+          0,
+          4
+        ],
+        "coin": "BlueCoin",
+        "coinId": 12,
+        "action": "added_to_meter",
+        "meterValueAfter": 10
+      }
+    ],
+    "meters": {
+      "blue": 10,
+      "yellow": {
+        "Mega": 5000,
+        "Grand": 1077,
+        "Major": 200,
+        "Maxi": 50,
+        "Minor": 20,
+        "Mini": 10
+      },
+      "red": 30
+    }
+  },
+  "player": {
+    "balance": 6854.49
+  }
+}

@@ -104,6 +104,10 @@ public class SlotView : MonoBehaviour
   [Tooltip("Which column of a winning line carries its payout text. 2 = the 3rd reel.")]
   [SerializeField] private int winTextColumnIndex = 2;
 
+  [Tooltip("The win popup shown between stage 1 and stage 2. Stage 1 keeps looping " +
+           "underneath it. Leave this unassigned and no win popup ever plays.")]
+  [SerializeField] private WinPopupController winPopup;
+
   [Header("Mystery Locker Reveal")]
   [Tooltip("Closed-locker sprite shown over a Mystery cell from the moment the result " +
            "arrives until the reels stop. Must be fully opaque — the revealed symbol is " +
@@ -164,9 +168,6 @@ public class SlotView : MonoBehaviour
   [Tooltip("Beat between a coin reaching its pig and that pig sending its jackpot coin on.")]
   [SerializeField] private float jackpotCoinDelay = 0.15f;
 
-  [Header("Phase 1 Total Win Presentation")]
-  [SerializeField] private TMPro.TMP_Text phase1TotalWinText;
-
   [Header("Symbol Info Card")]
   [SerializeField] private SymbolInfoCard symbolInfoCard;
 
@@ -180,6 +181,9 @@ public class SlotView : MonoBehaviour
   // the panel would switch off and back on within a frame or two of itself, which reads as
   // a snap. Only the end of the presentation, or the next spin, takes it down.
   private bool winOverlayHeld;
+
+  // So the "no win popup assigned" error is reported once, not on every winning spin.
+  private bool warnedNoWinPopup;
 
   private Dictionary<int, SymbolWinAnim> winAnimById;
 
@@ -361,7 +365,6 @@ public class SlotView : MonoBehaviour
   private void DisableAllOverlays()
   {
     SetWinOverlayActive(false);
-    HidePhase1TotalWinText();
     HideAllWinLineTexts();
     if (symbolInfoCard) symbolInfoCard.HideCard();
   }
@@ -1144,11 +1147,14 @@ public class SlotView : MonoBehaviour
   /// spin kills this coroutine:
   ///
   ///   STAGE 1  every winning cell at once, no payout text
+  ///   POPUP    the win popup fades in over stage 1 repeating underneath it
   ///   STAGE 2  each line in turn, phase2Repeats times, payout text on its 3rd-reel cell
   ///   STAGE 3  stage 1 on repeat, forever
   ///
   /// <paramref name="onComplete"/> fires at the end of stage 1 so the game loop can return
-  /// to Idle while the rest plays out. Autoplay and free spins stop after stage 1.
+  /// to Idle while the rest plays out — but the popup, if there is one, is already holding
+  /// the loop by then through UIManager.isSpecialWinActive. Autoplay and free spins get the
+  /// popup and then stop; they never see stages 2 and 3.
   /// </summary>
   internal void ShowWinLineAnimation(List<WinLine> winLines, System.Action onComplete)
   {
@@ -1178,16 +1184,11 @@ public class SlotView : MonoBehaviour
       foreach (int flatIndex in winLine.positions) allWinPositions.Add(flatIndex);
     }
 
-    // [WIN POPUP TODO] The round total used to appear as a label in the middle of the
-    // grid during stage 1. That belongs in a proper win popup, not floating over the
-    // reels, so it is off until that popup exists. phase1TotalWinText and its two helpers
-    // are left wired so turning it back on is a one-line change.
-    //
-    // double totalWinAmount = 0;
-    // foreach (var winLine in winLines) totalWinAmount += winLine.winAmount;
-    // if (totalWinAmount <= 0 && gameManager != null && gameManager.lastResult != null)
-    //   totalWinAmount = gameManager.lastResult.winAmount;
-    // ShowPhase1TotalWin(totalWinAmount);
+    // The round total, for the win popup below.
+    double totalWinAmount = 0;
+    foreach (var winLine in winLines) totalWinAmount += winLine.winAmount;
+    if (totalWinAmount <= 0 && gameManager != null && gameManager.lastResult != null)
+      totalWinAmount = gameManager.lastResult.winAmount;
 
     AudioManager.Instance?.PlayWinLinePhase1Start();
 
@@ -1201,8 +1202,43 @@ public class SlotView : MonoBehaviour
     yield return StartCoroutine(AnimateWinPositions(allWinPositions));
     yield return new WaitForSeconds(phaseGapDelay);
 
+    // ---- WIN POPUP: fades in over stage 1 repeating underneath --------------------------
+    double totalPay = gameManager != null ? gameManager.GetTotalPay() : 0;
+    bool showPopup = false;
+    bool popupDone = false;
+
+    if (winPopup != null)
+    {
+      showPopup = winPopup.ShouldShow(totalWinAmount, totalPay);
+    }
+    else if (totalWinAmount > 0 && !warnedNoWinPopup)
+    {
+      // Once per session, not per spin. A null here is the single most likely reason a win
+      // shows its symbol animation but never its popup, and it is invisible otherwise.
+      warnedNoWinPopup = true;
+      Debug.LogError("[SlotView] This round won but no win popup played: the 'Win Popup' " +
+                     "field on SlotView is unassigned. Assign the WinPopupController object " +
+                     "to it in the Inspector.", this);
+    }
+
+    // Must be started BEFORE onComplete. Show() raises isSpecialWinActive synchronously, and
+    // onComplete runs GameManager.ProcessSpecialFeaturesAfterWin, which checks that flag on
+    // its very first statement — start the popup after it and the round resolves underneath.
+    if (showPopup)
+      winPopup.Show(totalWinAmount, totalPay, () => popupDone = true);
+
     // The game loop advances here — everything below is idle presentation.
     onComplete?.Invoke();
+
+    // The popup arrives as the symbols begin this second pass, and they keep cycling for as
+    // long as it is up. popupDone is only tested between passes: AnimateWinPositions has no
+    // cancel path, and cutting it mid-pass would strand its cells on winAnimationLayer with
+    // their payout text still showing. A pass is short and the fade-out overlaps it.
+    while (showPopup && !popupDone)
+    {
+      yield return StartCoroutine(AnimateWinPositions(allWinPositions));
+      yield return new WaitForSeconds(phaseGapDelay);
+    }
 
     // Autoplay and free spins never see the per-line breakdown; the next spin follows.
     if (gameManager != null && (gameManager.isAutoPlaying || gameManager.isInFreeSpins))
@@ -1442,30 +1478,7 @@ public class SlotView : MonoBehaviour
     }
   }
 
-  private void ShowPhase1TotalWin(double totalWinAmount)
-  {
-    if (phase1TotalWinText == null) return;
 
-    phase1TotalWinText.text = totalWinAmount.ToString("0.###");
-
-    Transform t = phase1TotalWinText.transform;
-    t.DOKill();
-    t.localScale = Vector3.zero;
-    t.gameObject.SetActive(true);
-
-    Sequence seq = DOTween.Sequence();
-    seq.Append(t.DOScale(1.2f, 0.15f).SetEase(Ease.OutQuad));
-    seq.Append(t.DOScale(1.0f, 0.10f).SetEase(Ease.InQuad));
-    winTweens.Add(seq);
-  }
-
-  private void HidePhase1TotalWinText()
-  {
-    if (phase1TotalWinText == null) return;
-    phase1TotalWinText.transform.DOKill();
-    phase1TotalWinText.transform.localScale = Vector3.one;
-    phase1TotalWinText.gameObject.SetActive(false);
-  }
 
   #endregion
 
@@ -1530,8 +1543,13 @@ public class SlotView : MonoBehaviour
     // Release before hiding — the hold is what stops an individual stage taking the panel
     // down mid-presentation, so it has to be dropped here or the panel could never go away.
     ReleaseWinOverlay();
-    HidePhase1TotalWinText();
     HideAllWinLineTexts();
+
+    // The popup and its coins are part of the presentation, so the next spin takes them down
+    // with everything else. Its sequence runs on the popup's own MonoBehaviour, so stopping
+    // winAnimationCoroutine above does NOT reach it — without this it would keep holding
+    // isSpecialWinActive and the game loop would never advance again.
+    winPopup?.CancelImmediate();
   }
 
   private void KillAllTweens()
@@ -1550,16 +1568,6 @@ public class SlotView : MonoBehaviour
   }
 
   #endregion
-
-  // ===========================================================================
-  // [CNY] Feature animations kept for reference. USpin, MoneyBag and the single
-  // scatter symbol have no Rich Piggies equivalent — the three piggy bonus symbols
-  // replace them. Restore the shape of these when the piggy trigger payload lands.
-  // ===========================================================================
-  //
-  // internal void AnimateAllScatters(int loopCount) { ... }
-  // internal void AnimateUSpinWin(System.Action onComplete) { ... }
-  // internal void AnimateMoneyBagWin() { ... }
 }
 
 /// <summary>One column of reel cells, top to bottom.</summary>

@@ -139,28 +139,18 @@ public class SymbolInfoCard : MonoBehaviour
 
         string symbolNameLower = symbolInfo != null ? (symbolInfo.name ?? "").ToLower() : "";
 
-        // Check if special symbol: Wild (ID 10), USpin (ID 11), MoneyBag (ID 12)
+        // [SYMBOL TODO] The USpin (11) and MoneyBag (12) branches went with the CNY wheel and
+        // pick bonuses. Rich Piggies replaces them with Mystery and the three piggy bonus
+        // symbols, whose ids are still being agreed with the backend — see CLAUDE.md §6. Add
+        // their cases here once that map is fixed.
         bool isWild = (symbolId == 10) || (symbolInfo != null && symbolInfo.isWild) || symbolNameLower.Contains("wild");
-        bool isUSpin = (symbolId == 11) || symbolNameLower.Contains("uspin");
-        bool isMoneyBag = (symbolId == 12) || symbolNameLower.Contains("moneybag") || symbolNameLower.Contains("money bag");
 
-        if (isWild || isUSpin || isMoneyBag)
+        if (isWild)
         {
             // SPECIAL SYMBOL: Text alignment CENTER
             infoText.alignment = TextAlignmentOptions.Center;
             infoText.enableWordWrapping = true;
-if (isUSpin)
-{
-    infoText.text = "3 U-Spin symbols trigger the Wheel Bonus feature.";
-}
-else if (isMoneyBag)
-{
-    infoText.text = "3 Money Bag symbols trigger the Money Bag Collect feature.";
-}
-else if (isWild)
-{
-    infoText.text = "Substitutes for all symbols except U-Spin and Money Bag.";
-}
+            infoText.text = "Substitutes for all symbols except the Blue, Yellow and Red Piggy.";
         }
         else
         {
