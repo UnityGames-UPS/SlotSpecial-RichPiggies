@@ -269,6 +269,32 @@ public class ServerCoinOverlay
 
   /// <summary>Symbol id, 12-14. Authoritative; <see cref="coin"/> is the readable form.</summary>
   public int coinId;
+
+  /// <summary>
+  /// What this coin DID: "added_to_meter" fed its meter, "triggered" fed the Free Spins
+  /// trigger instead. The distinction cannot be recovered from the meter diff — a triggering
+  /// coin moves no meter and looks identical to one the server rolled no award for — so
+  /// without this field the client has to fall back to guessing (see CoinPlanBuilder).
+  /// </summary>
+  public string action;
+
+  /// <summary>
+  /// Blue / Red only: the meter's ABSOLUTE value once this coin has landed. Note the
+  /// asymmetry with <see cref="jackpotMultiplierAdded"/>, which is a delta.
+  /// </summary>
+  public int? meterValueAfter;
+
+  /// <summary>
+  /// Yellow only: which jackpot tier this coin fed — "Mega", "Grand", "Major", "Maxi",
+  /// "Minor" or "Mini". CASE-SENSITIVE; it keys straight into the meters dictionary.
+  /// </summary>
+  public string addedToJackpot;
+
+  /// <summary>
+  /// Yellow only: how much was added to <see cref="addedToJackpot"/>. A DELTA, not the value
+  /// after — the client accumulates it onto the tier's current multiplier.
+  /// </summary>
+  public double? jackpotMultiplierAdded;
 }
 
 [Serializable]

@@ -108,6 +108,11 @@ public class SlotView : MonoBehaviour
            "underneath it. Leave this unassigned and no win popup ever plays.")]
   [SerializeField] private WinPopupController winPopup;
 
+  [Tooltip("The free-spin trigger / intro / outro presentation. Cancelled alongside the win " +
+           "popup when a new spin kills the presentation, for the same reason: it holds the " +
+           "isSpecialWinActive gate the game loop parks on.")]
+  [SerializeField] private FreeSpinPresenter freeSpinPresenter;
+
   [Header("Mystery Locker Reveal")]
   [Tooltip("Closed-locker sprite shown over a Mystery cell from the moment the result " +
            "arrives until the reels stop. Must be fully opaque — the revealed symbol is " +
@@ -181,6 +186,12 @@ public class SlotView : MonoBehaviour
   // the panel would switch off and back on within a frame or two of itself, which reads as
   // a snap. Only the end of the presentation, or the next spin, takes it down.
   private bool winOverlayHeld;
+
+  // The FREE-SPIN presentation's claim on the same panel, tracked separately because it has
+  // to survive things winOverlayHeld does not — in particular the spin the free-spin intro
+  // starts underneath its own popups, whose StartSpin releases the win hold. Only
+  // FadeOutOverlay clears this one.
+  private bool featureOverlayHeld;
 
   // So the "no win popup assigned" error is reported once, not on every winning spin.
   private bool warnedNoWinPopup;
@@ -919,9 +930,10 @@ public class SlotView : MonoBehaviour
       return;
     }
 
-    // The server says which coins landed and what the meters read afterwards, never which
-    // coin did what. The allocator infers it by diffing against the values already on screen.
-    var plans = MeterDeltaAllocator.Build(pigMeters.CachedMeters, meters, coinOverlays);
+    // The server now states what each coin did (action / meterValueAfter / addedToJackpot).
+    // CoinPlanBuilder reads that where it is present and falls back to diffing the meters —
+    // loudly — where it is not.
+    var plans = CoinPlanBuilder.Build(pigMeters.CachedMeters, meters, coinOverlays);
 
     foreach (var plan in plans)
     {
@@ -1456,9 +1468,83 @@ public class SlotView : MonoBehaviour
     SetWinOverlayActive(false);
   }
 
+  /// <summary>
+  /// Claim the darkening panel for a FEATURE rather than a win, and keep it up until
+  /// <see cref="FadeOutOverlay"/> releases it.
+  ///
+  /// The free-spin trigger and outro both run their popups over a darkened grid for far
+  /// longer than a win presentation does, and across beats — reels restarting, symbols
+  /// resetting — that would otherwise each take the panel down.
+  /// </summary>
+  internal void HoldOverlayForFeature()
+  {
+    featureOverlayHeld = true;
+    SetWinOverlayActive(true);
+    EnforceWinLayerOrder();
+  }
+
+  /// <summary>
+  /// Stop the win presentation and return every cell to rest, then claim the panel for the
+  /// feature about to play over the same dark grid.
+  ///
+  /// interruptedBySpin is false because this is NOT a spin ending the presentation: the
+  /// feature is taking it over, and cancelling the free-spin presenter here would tear down
+  /// the very popups the caller is about to open.
+  /// </summary>
+  internal void SettleSymbolsForFeature()
+  {
+    KillWinTweens(stopCoroutine: true, interruptedBySpin: false);
+    HoldOverlayForFeature();
+  }
+
+  /// <summary>
+  /// Drop the feature's hold and cut the panel this frame. For a feature presentation being
+  /// torn down rather than finishing — nothing is left on screen to fade.
+  /// </summary>
+  internal void ReleaseFeatureOverlay()
+  {
+    featureOverlayHeld = false;
+    SetWinOverlayActive(false);
+  }
+
+  /// <summary>
+  /// Release the feature's hold and fade the panel out, rather than cutting it. Yields until
+  /// the fade finishes so a caller can sequence the reels' return behind it.
+  /// </summary>
+  internal IEnumerator FadeOutOverlay(float duration)
+  {
+    featureOverlayHeld = false;
+    winOverlayHeld = false;
+
+    if (winDarkenOverlay == null) yield break;
+
+    var image = winDarkenOverlay.GetComponent<Graphic>();
+    if (image == null || duration <= 0f)
+    {
+      SetWinOverlayActive(false);
+      yield break;
+    }
+
+    // Cached and restored, because the panel's authored alpha is what every later SetActive
+    // path relies on — fading it and leaving it at 0 would make the next win's darkening
+    // silently invisible.
+    float startAlpha = image.color.a;
+    yield return image.DOFade(0f, duration).SetEase(Ease.InQuad).WaitForCompletion();
+
+    SetWinOverlayActive(false);
+
+    var restored = image.color;
+    restored.a = startAlpha;
+    image.color = restored;
+  }
+
   private void SetWinOverlayActive(bool active)
   {
-    if (!active && winOverlayHeld) return;
+    // EITHER hold blocks a hide, and the feature hold is the stronger of the two. A free-spin
+    // intro deliberately starts a spin while its popups are still up, and that spin's
+    // StartSpin -> KillWinTweens -> ReleaseWinOverlay would otherwise take the panel down out
+    // from under them. Only FadeOutOverlay clears the feature hold.
+    if (!active && (winOverlayHeld || featureOverlayHeld)) return;
     if (winDarkenOverlay != null && winDarkenOverlay.activeSelf != active)
       winDarkenOverlay.SetActive(active);
   }
@@ -1519,7 +1605,12 @@ public class SlotView : MonoBehaviour
 
   internal bool IsSpinning() => isSpinning;
 
-  private void KillWinTweens(bool stopCoroutine = true)
+  /// <param name="interruptedBySpin">
+  /// True when a new SPIN is ending the presentation, which is what makes it right to take
+  /// the darkening panel down and cancel the popups. False when a FEATURE is taking the
+  /// presentation over instead — see <see cref="SettleSymbolsForFeature"/>.
+  /// </param>
+  private void KillWinTweens(bool stopCoroutine = true, bool interruptedBySpin = true)
   {
     foreach (var tween in winTweens) tween?.Kill();
     winTweens.Clear();
@@ -1542,14 +1633,21 @@ public class SlotView : MonoBehaviour
 
     // Release before hiding — the hold is what stops an individual stage taking the panel
     // down mid-presentation, so it has to be dropped here or the panel could never go away.
-    ReleaseWinOverlay();
+    if (interruptedBySpin) ReleaseWinOverlay();
     HideAllWinLineTexts();
 
     // The popup and its coins are part of the presentation, so the next spin takes them down
     // with everything else. Its sequence runs on the popup's own MonoBehaviour, so stopping
     // winAnimationCoroutine above does NOT reach it — without this it would keep holding
     // isSpecialWinActive and the game loop would never advance again.
-    winPopup?.CancelImmediate();
+    //
+    // Only on the spin path: a feature settling the symbols is ABOUT to open its own popups,
+    // and cancelling them here would tear them down the moment they opened.
+    if (interruptedBySpin)
+    {
+      winPopup?.CancelImmediate();
+      freeSpinPresenter?.CancelImmediate();
+    }
   }
 
   private void KillAllTweens()

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3941e15fe04104c11b170db85326bcc4
+guid: 86127e144e2e0447cb81fccc601087bd
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5223947770198447396
-    second: locket_0
+      213: 6144600640552989998
+    second: LOCKET_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: locket_0
+      name: LOCKET_0
       rect:
         serializedVersion: 2
-        x: 57
-        y: 16
-        width: 1130
-        height: 1160
+        x: 11
+        y: 18
+        width: 198
+        height: 189
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4255fdfb1d03f7840800000000000000
-      internalID: 5223947770198447396
+      spriteID: e257cc22ab1064550800000000000000
+      internalID: 6144600640552989998
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      locket_0: 5223947770198447396
+      LOCKET_0: 6144600640552989998
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

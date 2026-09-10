@@ -1,6 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
+using DG.Tweening;
 using Spine.Unity;
 
 /// <summary>
@@ -61,6 +64,26 @@ public class PigMeterController : MonoBehaviour
 
     [Tooltip("This coin's PNG sequence, in order. Looped for the whole flight.")]
     public List<Sprite> coinFrames = new List<Sprite>();
+
+    [Header("Free-spin trigger presentation")]
+    [Tooltip("Glow behind this pig's counter. Alpha is yoyo'd 0 <-> glowMaxAlpha for the " +
+             "whole free-spin round when this pig contributed to the trigger.")]
+    public Image glow;
+    public Image glowPortrait;
+
+    [Tooltip("\"Winner\" badge blinked on and off while the trigger popup is up. Stops the " +
+             "moment the player dismisses that popup — unlike the glow, which runs all round.")]
+    public GameObject winnerImage;
+    public GameObject winnerImagePortrait;
+
+    [Tooltip("Cash-drop animation played ONCE on this pig as the trigger presentation starts.")]
+    public ImageAnimation cashAnim;
+    public ImageAnimation cashAnimPortrait;
+
+    [Tooltip("Every Graphic that should be tinted with darkenColor when this pig did NOT " +
+             "contribute to the trigger. Set the list in the Inspector.")]
+    public List<Graphic> darkenTargets = new List<Graphic>();
+    public List<Graphic> darkenTargetsPortrait = new List<Graphic>();
   }
 
   [Header("References")]
@@ -108,6 +131,33 @@ public class PigMeterController : MonoBehaviour
            "SLOWER per frame, not just longer — keep the nine sequences the same length, or " +
            "expect them to spin at visibly different rates.")]
   [SerializeField] private float coinAnimationSpeed = 5f;
+
+  [Header("Free-spin trigger presentation")]
+  [Tooltip("Peak alpha of a contributing pig's glow. It yoyos between 0 and this.")]
+  [SerializeField] private float glowMaxAlpha = 0.8f;
+
+  [Tooltip("Seconds for ONE leg of the glow yoyo (0 -> max). A full cycle is twice this.")]
+  [SerializeField] private float glowFadeDuration = 0.6f;
+
+  [Tooltip("Seconds the winner badge stays visible in each blink.")]
+  [SerializeField] private float winnerBlinkOnDuration = 0.4f;
+
+  [Tooltip("Seconds the winner badge stays hidden in each blink.")]
+  [SerializeField] private float winnerBlinkOffDuration = 0.3f;
+
+  [Tooltip("Tint applied to a NON-contributing pig's darkenTargets for the round.")]
+  [SerializeField] private Color darkenColor = new Color(0.25f, 0.25f, 0.25f, 1f);
+
+  [Tooltip("Tint restored when the round ends. White unless the art is authored pre-tinted.")]
+  [SerializeField] private Color normalColor = Color.white;
+
+  [Tooltip("ImageAnimation speed for the per-pig cash-drop animation.")]
+  [SerializeField] private float cashAnimationSpeed = 5f;
+
+  // Live glow tweens and blink coroutines, one per pig, so a round can be torn down without
+  // walking the whole pigs list guessing at what is running.
+  private readonly Dictionary<int, Tween> glowTweens = new Dictionary<int, Tween>();
+  private readonly Dictionary<int, Coroutine> winnerBlinks = new Dictionary<int, Coroutine>();
 
   // Last meter values the client rendered. Diffed against the next spin's meters to work
   // out which coin moved what. Resynced to the server value at the end of every coin beat,
@@ -298,6 +348,211 @@ public class PigMeterController : MonoBehaviour
     graphic.AnimationState.SetAnimation(0, jumpAnimation, false);
     graphic.AnimationState.AddAnimation(0, idleAnimation, true, 0f);
   }
+
+  #region Free-spin trigger presentation
+
+  /// <summary>
+  /// Dress the pig UI for a free-spin round.
+  ///
+  /// Contributors glow (an endless yoyo that runs for the whole round), blink their winner
+  /// badge (only until the trigger popup is dismissed) and play their cash-drop animation
+  /// once. Non-contributors are tinted with <see cref="darkenColor"/> and their Spine
+  /// animation freezes, so the screen states plainly which pigs are in play.
+  ///
+  /// Called once the coin flights have landed, before the win presentation plays on top.
+  /// </summary>
+  internal void EnterTriggerState(PigFeature contributors)
+  {
+    foreach (var feature in PigFeatures.All)
+    {
+      int coinId = PigFeatures.CoinSymbolId(feature);
+      var ui = FindPig(coinId);
+      if (ui == null) continue;
+
+      if (PigFeatures.Has(contributors, feature))
+      {
+        StartGlow(coinId, ui);
+        StartWinnerBlink(coinId, ui);
+
+        // Once, not looped — the cash drop is a reaction to the trigger, not a state.
+        CoinAnimator.PlayOnce(ui.cashAnim, cashAnimationSpeed, null);
+        CoinAnimator.PlayOnce(ui.cashAnimPortrait, cashAnimationSpeed, null);
+      }
+      else
+      {
+        SetTint(ui, darkenColor);
+        FreezePig(ui, frozen: true);
+      }
+    }
+  }
+
+  /// <summary>
+  /// Stop the winner badges. The glow deliberately keeps running — it marks the pigs in play
+  /// for the whole round, while the badge belongs only to the trigger popup.
+  /// </summary>
+  internal void StopWinnerLoop()
+  {
+    foreach (var kv in winnerBlinks)
+      if (kv.Value != null) StopCoroutine(kv.Value);
+
+    winnerBlinks.Clear();
+
+    foreach (var ui in pigs)
+    {
+      if (ui == null) continue;
+      SetActiveSafe(ui.winnerImage, false);
+      SetActiveSafe(ui.winnerImagePortrait, false);
+    }
+  }
+
+  /// <summary>
+  /// Put the pig UI back the way the base game leaves it: glows off, tints restored, every
+  /// pig unfrozen and idling. Idempotent, so the outro and an interrupted round can both
+  /// call it.
+  ///
+  /// The METERS need nothing here — the last free spin's ResyncTo has already taken the
+  /// server's post-reset values.
+  /// </summary>
+  internal void ExitFreeSpins()
+  {
+    StopWinnerLoop();
+
+    foreach (var kv in glowTweens)
+      kv.Value?.Kill();
+
+    glowTweens.Clear();
+
+    foreach (var ui in pigs)
+    {
+      if (ui == null) continue;
+
+      SetGlowAlpha(ui.glow, 0f);
+      SetGlowAlpha(ui.glowPortrait, 0f);
+      SetActiveSafe(ui.glow != null ? ui.glow.gameObject : null, false);
+      SetActiveSafe(ui.glowPortrait != null ? ui.glowPortrait.gameObject : null, false);
+
+      CoinAnimator.Stop(ui.cashAnim);
+      CoinAnimator.Stop(ui.cashAnimPortrait);
+
+      SetTint(ui, normalColor);
+      FreezePig(ui, frozen: false);
+    }
+
+    ResetPigsToIdle();
+  }
+
+  private void StartGlow(int coinId, PigUI ui)
+  {
+    if (glowTweens.TryGetValue(coinId, out var existing)) existing?.Kill();
+
+    // Both orientations are driven, not just the visible one: the player can rotate at any
+    // point in a round that lasts dozens of spins, and the off-screen glow has to already be
+    // mid-cycle when they do.
+    SetActiveSafe(ui.glow != null ? ui.glow.gameObject : null, true);
+    SetActiveSafe(ui.glowPortrait != null ? ui.glowPortrait.gameObject : null, true);
+
+    SetGlowAlpha(ui.glow, 0f);
+    SetGlowAlpha(ui.glowPortrait, 0f);
+
+    var sequence = DOTween.Sequence().SetLoops(-1, LoopType.Yoyo);
+    bool anyTarget = false;
+
+    if (ui.glow != null)
+    {
+      sequence.Join(ui.glow.DOFade(glowMaxAlpha, glowFadeDuration).SetEase(Ease.InOutSine));
+      anyTarget = true;
+    }
+
+    if (ui.glowPortrait != null)
+    {
+      sequence.Join(ui.glowPortrait.DOFade(glowMaxAlpha, glowFadeDuration).SetEase(Ease.InOutSine));
+      anyTarget = true;
+    }
+
+    if (!anyTarget)
+    {
+      sequence.Kill();
+      Debug.LogError($"[PigMeters] Pig {coinId} contributed to a free-spin trigger but has no " +
+                     "glow wired in either orientation, so nothing will mark it as in play. " +
+                     "Assign glow / glowPortrait in the Inspector.", this);
+      return;
+    }
+
+    glowTweens[coinId] = sequence;
+  }
+
+  private void StartWinnerBlink(int coinId, PigUI ui)
+  {
+    if (winnerBlinks.TryGetValue(coinId, out var existing) && existing != null)
+      StopCoroutine(existing);
+
+    winnerBlinks[coinId] = StartCoroutine(BlinkWinner(ui));
+  }
+
+  private IEnumerator BlinkWinner(PigUI ui)
+  {
+    // Runs until StopWinnerLoop stops the coroutine. Both orientations toggle together for
+    // the same reason the glow does.
+    while (true)
+    {
+      SetActiveSafe(ui.winnerImage, true);
+      SetActiveSafe(ui.winnerImagePortrait, true);
+      yield return new WaitForSeconds(winnerBlinkOnDuration);
+
+      SetActiveSafe(ui.winnerImage, false);
+      SetActiveSafe(ui.winnerImagePortrait, false);
+      yield return new WaitForSeconds(winnerBlinkOffDuration);
+    }
+  }
+
+  private static void SetGlowAlpha(Image glow, float alpha)
+  {
+    if (glow == null) return;
+    var color = glow.color;
+    color.a = alpha;
+    glow.color = color;
+  }
+
+  private static void SetActiveSafe(GameObject target, bool active)
+  {
+    if (target != null && target.activeSelf != active) target.SetActive(active);
+  }
+
+  /// <summary>Tint both orientations' darken lists. Alpha is left alone — only the RGB dims.</summary>
+  private static void SetTint(PigUI ui, Color color)
+  {
+    TintAll(ui.darkenTargets, color);
+    TintAll(ui.darkenTargetsPortrait, color);
+  }
+
+  private static void TintAll(List<Graphic> targets, Color color)
+  {
+    if (targets == null) return;
+
+    foreach (var graphic in targets)
+    {
+      if (graphic == null) continue;
+      graphic.color = new Color(color.r, color.g, color.b, graphic.color.a);
+    }
+  }
+
+  /// <summary>
+  /// Freeze or resume a pig's Spine animation. TimeScale rather than stopping the track, so
+  /// the pig holds the pose it was in rather than snapping to the setup pose.
+  /// </summary>
+  private static void FreezePig(PigUI ui, bool frozen)
+  {
+    SetTimeScale(ui.pig, frozen ? 0f : 1f);
+    SetTimeScale(ui.pigPortrait, frozen ? 0f : 1f);
+  }
+
+  private static void SetTimeScale(SkeletonGraphic graphic, float scale)
+  {
+    if (graphic == null || graphic.AnimationState == null) return;
+    graphic.AnimationState.TimeScale = scale;
+  }
+
+  #endregion
 
   /// <summary>Put every pig back on its idle loop. Used when seeding.</summary>
   internal void ResetPigsToIdle()

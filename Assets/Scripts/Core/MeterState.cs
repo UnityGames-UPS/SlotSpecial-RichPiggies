@@ -73,6 +73,14 @@ internal class CoinPlan
   internal int meterValueAfter;
 
   /// <summary>
+  /// This coin fed the Free Spins trigger rather than its meter. It still flies and still
+  /// jumps its pig; <see cref="movesMeter"/> is false, so no text ticks. Only ever set on the
+  /// authoritative path — the meter diff cannot tell a triggering coin from a coin the server
+  /// awarded nothing for.
+  /// </summary>
+  internal bool triggersFeature;
+
+  /// <summary>
   /// Yellow only: the jackpot coins this one sends onward. Normally 0 or 1 entries; more
   /// only in the pathological case where more tiers moved than there were coins.
   /// </summary>
@@ -80,7 +88,156 @@ internal class CoinPlan
 }
 
 /// <summary>
-/// Attributes a spin's meter movement to its coins.
+/// Turns a spin's coinOverlays into the per-coin plans the flight beat runs.
+///
+/// The backend now states outright what each coin did — payload.coinOverlays carries
+/// <c>action</c>, <c>meterValueAfter</c> for blue/red and
+/// <c>addedToJackpot</c>/<c>jackpotMultiplierAdded</c> for yellow — so the client no longer
+/// has to infer it. That matters beyond tidiness: a coin with <c>action: "triggered"</c> fed
+/// the Free Spins trigger and moves NO meter, which is indistinguishable by diffing from a
+/// coin the server simply awarded nothing for.
+///
+/// <see cref="MeterDeltaAllocator"/> is kept as a fallback for a payload that arrives without
+/// those fields, and taking it is reported loudly — the shape is still in flux, and a silent
+/// downgrade to guessing is exactly the failure that would go unnoticed.
+/// </summary>
+internal static class CoinPlanBuilder
+{
+  internal static List<CoinPlan> Build(MeterSnapshot previous, ServerMeters next,
+                                       List<ServerCoinOverlay> coinOverlays)
+  {
+    if (coinOverlays == null || coinOverlays.Count == 0) return new List<CoinPlan>();
+
+    if (!HasAuthoritativeFields(coinOverlays))
+      return MeterDeltaAllocator.Build(previous, next, coinOverlays);
+
+    return BuildFromServer(previous, coinOverlays);
+  }
+
+  /// <summary>
+  /// Whether every overlay carries what the authoritative path needs. All or nothing: a
+  /// mixed payload means the shape changed under us, and half-guessing would produce a
+  /// worse result than guessing consistently.
+  /// </summary>
+  private static bool HasAuthoritativeFields(List<ServerCoinOverlay> coinOverlays)
+  {
+    for (int i = 0; i < coinOverlays.Count; i++)
+    {
+      var overlay = coinOverlays[i];
+      if (overlay == null) continue;
+
+      if (string.IsNullOrEmpty(overlay.action))
+      {
+        Debug.LogWarning($"[Meters] coinOverlays[{i}] has no \"action\" field, so the client " +
+                         "cannot tell which coin fed which meter — falling back to diffing " +
+                         "payload.meters. A coin that TRIGGERED free spins will be " +
+                         "indistinguishable from one that won nothing. Check whether the " +
+                         "backend payload shape changed again.");
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static List<CoinPlan> BuildFromServer(MeterSnapshot previous,
+                                                List<ServerCoinOverlay> coinOverlays)
+  {
+    previous = previous ?? new MeterSnapshot();
+
+    var plans = new List<CoinPlan>();
+
+    // Jackpot multipliers arrive as DELTAS while the meter text wants a cumulative value, so
+    // each tier is walked forward from what is already on screen. Several yellow coins in one
+    // spin may feed the same tier, and each must land the text on its own running total.
+    var runningJackpot = new Dictionary<string, double>();
+
+    for (int i = 0; i < coinOverlays.Count; i++)
+    {
+      var overlay = coinOverlays[i];
+      var plan = MeterDeltaAllocator.BuildPlan(overlay);
+      if (plan == null) continue;
+
+      plans.Add(plan);
+
+      string action = overlay.action;
+
+      if (string.Equals(action, "triggered", System.StringComparison.OrdinalIgnoreCase))
+      {
+        // Fed the Free Spins trigger, not a meter. It still flies and still jumps its pig.
+        plan.triggersFeature = true;
+        plan.movesMeter = false;
+        continue;
+      }
+
+      if (!string.Equals(action, "added_to_meter", System.StringComparison.OrdinalIgnoreCase))
+      {
+        Debug.LogWarning($"[Meters] coinOverlays[{i}] has an unrecognised action " +
+                         $"\"{action}\". The coin will fly and jump its pig, but no meter " +
+                         "will move. Add the new action to CoinPlanBuilder.");
+        plan.movesMeter = false;
+        continue;
+      }
+
+      if (plan.coinSymbolId == RichPiggiesSymbols.YellowCoin)
+        ApplyJackpotAward(plan, overlay, previous, runningJackpot, i);
+      else
+        ApplyIntegerMeter(plan, overlay, i);
+    }
+
+    return plans;
+  }
+
+  /// <summary>Blue / Red: the server states the meter's absolute value after this coin.</summary>
+  private static void ApplyIntegerMeter(CoinPlan plan, ServerCoinOverlay overlay, int index)
+  {
+    if (!overlay.meterValueAfter.HasValue)
+    {
+      Debug.LogWarning($"[Meters] coinOverlays[{index}] says \"added_to_meter\" but carries no " +
+                       "meterValueAfter, so its meter text cannot be ticked as it lands. The " +
+                       "end-of-beat resync will still land the meter on the server's value.");
+      plan.movesMeter = false;
+      return;
+    }
+
+    plan.movesMeter = true;
+    plan.meterValueAfter = overlay.meterValueAfter.Value;
+  }
+
+  /// <summary>
+  /// Yellow: the server names the tier and how much it gained. Accumulated onto the tier's
+  /// current multiplier, because the meter text shows a running total rather than a delta.
+  /// </summary>
+  private static void ApplyJackpotAward(CoinPlan plan, ServerCoinOverlay overlay,
+                                        MeterSnapshot previous,
+                                        Dictionary<string, double> runningJackpot, int index)
+  {
+    string tier = overlay.addedToJackpot;
+
+    if (string.IsNullOrEmpty(tier))
+    {
+      Debug.LogWarning($"[Meters] coinOverlays[{index}] is a yellow coin marked " +
+                       "\"added_to_meter\" but names no addedToJackpot tier, so no jackpot " +
+                       "coin can be sent on. The coin still flies to the Yellow Pig.");
+      plan.movesMeter = false;
+      return;
+    }
+
+    if (!runningJackpot.TryGetValue(tier, out double current))
+      current = previous.Yellow(tier);
+
+    double valueAfter = current + (overlay.jackpotMultiplierAdded ?? 0);
+    runningJackpot[tier] = valueAfter;
+
+    plan.movesMeter = true;
+    plan.jackpotAwards.Add(new JackpotAward { tier = tier, valueAfter = valueAfter });
+  }
+}
+
+/// <summary>
+/// LEGACY fallback: attributes a spin's meter movement to its coins by DIFFING the previous
+/// snapshot against payload.meters, for a payload that predates the per-coin fields
+/// <see cref="CoinPlanBuilder"/> prefers. Reaching this is reported as a warning.
 ///
 /// Every value produced is a CUMULATIVE TARGET ("after this coin, the text reads X"), never
 /// a per-coin delta. That is what keeps the display honest: however the split is guessed,
@@ -127,7 +284,12 @@ internal static class MeterDeltaAllocator
     return plans;
   }
 
-  private static CoinPlan BuildPlan(ServerCoinOverlay overlay)
+  /// <summary>
+  /// Position and coin colour, the part of a plan both paths share. Internal because
+  /// <see cref="CoinPlanBuilder"/> needs the same coinId-then-name resolution and duplicating
+  /// it would let the two paths disagree about what a malformed overlay means.
+  /// </summary>
+  internal static CoinPlan BuildPlan(ServerCoinOverlay overlay)
   {
     if (overlay == null) return null;
 

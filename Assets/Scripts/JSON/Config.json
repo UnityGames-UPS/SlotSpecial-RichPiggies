@@ -573,7 +573,7 @@
           "4": 20
         }
       },
-      "freeSpinsCount": 10,
+      "freeSpinsCount": 7,
       "wildCountBuckets": [
         15,
         30,
@@ -613,7 +613,7 @@
         "Major": 4,
         "Minor": 2
       },
-      "freeSpinsCount": 8,
+      "freeSpinsCount": 7,
       "triggerProbability": 0.5,
       "coinAddsBetMultiplier": {
         "max": 100,
@@ -650,7 +650,8 @@
         "YellowCoin": 10
       },
       "coinInsideMysteryProbability": 0.5
-    }
+    },
+    "allowMultiProbabilityTrigger": true
   },
   "jackpots": [
     "Mega",

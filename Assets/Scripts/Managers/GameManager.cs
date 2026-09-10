@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour
   [SerializeField] internal PigMeterController pigMeters;
   [SerializeField] private PopupManager popupManager;
   [SerializeField] private SlotView slotView;
+  [SerializeField] private FreeSpinPresenter freeSpinPresenter;
 
   [Header("Spin Settings")]
   [SerializeField] private float normalSpinDuration = 3.5f;
@@ -29,14 +30,25 @@ public class GameManager : MonoBehaviour
   internal bool isAutoPlaying;
   internal int autoPlayTotalRounds;
   internal int autoPlayRemainingRounds;
-  internal bool wasAutoPlayingBeforeFreeSpins;
-  internal int savedAutoPlayRemainingRounds;
-  internal int savedAutoPlayTotalRounds;
 
   internal bool isInFreeSpins;
   internal int freeSpinsRemaining;
   internal int freeSpinsUsed;
   internal bool waitingForFreeSpinStart;
+
+  /// <summary>
+  /// The live round's bookkeeping — contributors, total spins, accumulated win. Null outside a
+  /// round. The server sends only freeSpinsRemaining, so everything else the UI needs is
+  /// tracked here. See <see cref="FreeSpinRound"/>.
+  /// </summary>
+  internal FreeSpinRound currentRound;
+
+  /// <summary>
+  /// Set the moment a trigger arrives in the spin payload and consumed once the win
+  /// presentation is done. Held rather than acted on immediately because the trigger
+  /// presentation must play AFTER the coin flights and the win lines, not instead of them.
+  /// </summary>
+  private FreeSpinRound pendingRound;
 
   internal bool isInitialized;
   internal bool initializationFailed;
@@ -173,18 +185,24 @@ public class GameManager : MonoBehaviour
 
   internal void RequestStop()
   {
-    if (currentState == GameState.Spinning)
+    if (currentState != GameState.Spinning) return;
+
+    if (isAutoPlaying)
     {
-      if (isAutoPlaying)
-      {
-        StopAutoPlay();
-      }
-      else if (!isInFreeSpins)
-      {
-        stopRequested = true;
-        uiManager.DisableSpinButtonDuringStop();
-      }
+      StopAutoPlay();
+      return;
     }
+
+    // The free-spin intro borrows this same button. Its popups are holding the reels open
+    // artificially, so a press there has to cut the ANNOUNCEMENT as well as landing the reels
+    // — otherwise the reels would stop and then keep spinning again to wait for the popups.
+    // A no-op outside the intro.
+    freeSpinPresenter?.RequestIntroStop();
+
+    // Free spins stop exactly like a base spin: the player is watching the same reels and has
+    // the same reason to want them down now.
+    stopRequested = true;
+    uiManager.DisableSpinButtonDuringStop();
   }
 
   private void StartSpin()
@@ -252,19 +270,15 @@ public class GameManager : MonoBehaviour
       // client works out which coin moved which meter by diffing them.
       slotView.ShowCoinOverlays(lastResult.coinOverlays, lastResult.meters);
 
-      if (lastResult.triggeredFeatures != null && lastResult.triggeredFeatures.Count > 0)
-      {
-        Debug.LogWarning("[GameManager] Feature trigger not implemented yet: " +
-                         string.Join(", ", lastResult.triggeredFeatures) +
-                         $" (activeFeature: {(lastResult.activeFeature != null && lastResult.activeFeature.Count > 0 ? string.Join(", ", lastResult.activeFeature) : "none")}, " +
-                         $"freeSpinsRemaining: {lastResult.serverSpinsRemaining}). " +
-                         "The coin beat still plays; the free-spin round and the meter " +
-                         "resets that end it are not built.");
-      }
+      LatchFreeSpinTrigger();
     }
 
     // 4. Cosmetic hold, interruptible by Stop.
-    while (Time.time < minSpinEndTime && !stopRequested)
+    //
+    //    IsIntroBlocking extends it indefinitely for the FIRST free spin: its reels keep
+    //    looping under the black overlay while the per-pig intro popups play, for however
+    //    long that takes. The intro's own Stop button clears the flag by way of stopRequested.
+    while ((Time.time < minSpinEndTime || IsFreeSpinIntroHolding) && !stopRequested)
     {
       yield return null;
     }
@@ -288,6 +302,28 @@ public class GameManager : MonoBehaviour
     }
   }
 
+  private bool IsFreeSpinIntroHolding =>
+      freeSpinPresenter != null && freeSpinPresenter.IsIntroBlocking;
+
+  /// <summary>
+  /// Read a free-spin trigger out of the spin payload and hold it until the presentation is
+  /// ready for it.
+  ///
+  /// Called while the reels are still looping, so the round's numbers are latched from THIS
+  /// response — in particular the Blue and Red meter values, which the server resets once the
+  /// round ends and which the intro popups have to announce.
+  /// </summary>
+  private void LatchFreeSpinTrigger()
+  {
+    if (isInFreeSpins || pendingRound != null) return;
+
+    var contributors = PigFeatures.Parse(lastResult.triggeredFeatures);
+    if (contributors == PigFeature.None) return;
+
+    pendingRound = FreeSpinRound.FromTrigger(contributors, lastResult.serverSpinsRemaining,
+                                             lastResult.meters, lastResult.winAmount);
+  }
+
   private void OnReelsStoppedComplete()
   {
     if (lastResult != null)
@@ -300,6 +336,12 @@ public class GameManager : MonoBehaviour
         currentBetIndex = lastResult.playerData != null ? lastResult.playerData.currentBetIndex : currentBetIndex
       };
     }
+
+    // Fold this free spin into the round total BEFORE the HUD is updated below — the win field
+    // reads currentRound.accumulatedWin, so doing it after (as ProcessSpinResult used to) left
+    // the bottom bar showing the previous spin's total all the way through this one.
+    if (isInFreeSpins && currentRound != null && lastResult != null)
+      currentRound.RecordSpin(lastResult.winAmount, lastResult.serverSpinsRemaining);
 
     // The HUD updates straight away and the state returns to Idle; the win presentation
     // plays out on top and does not gate that. SlotView fires OnWinAnimationComplete at the
@@ -320,6 +362,12 @@ public class GameManager : MonoBehaviour
       uiManager.DisableControlsDuringWinAnimation();
 
     currentState = GameState.Idle;
+
+    // The coin flights have already landed by now — SlotView runs them inside StopSpin, before
+    // this fires — so this is the moment the brief calls for: the triggering pigs light up and
+    // the others darken, and the win presentation then plays on top of that.
+    if (pendingRound != null && pigMeters != null)
+      pigMeters.EnterTriggerState(pendingRound.contributors);
 
     if (lastResult != null && lastResult.winLines != null && lastResult.winLines.Count > 0)
     {
@@ -350,11 +398,28 @@ public class GameManager : MonoBehaviour
     // idempotent and no-ops while any special win is still flagged.
     uiManager.EnableControlsAfterWinAnimation();
 
-    // [FREE SPINS TODO] Rich Piggies triggers free spins on any combination of Blue /
-    // Yellow / Red piggies, so the trigger presentation is net-new and lands here — animate
-    // the triggering piggies, hand off to a popup, then resume. The free-spin STATE machine
-    // below (StartFreeSpins / EndFreeSpins) is intact and stays inert while the server sends
-    // no freeSpinData.
+    // The free-spin trigger presentation lands here, after the coin flights and the whole win
+    // presentation have played. It does NOT fall through to ResumeAfterSpecialFeature: the
+    // presenter starts the first free spin itself, once the player has dismissed its popup.
+    if (pendingRound != null)
+    {
+      var round = pendingRound;
+      pendingRound = null;
+
+      // Settle the BASE-game spin that triggered before entering the round. Without this it
+      // would be resolved later, from inside StartSpin, by which time isInFreeSpins is true —
+      // and its win, which the player has already been paid, would be folded into the
+      // free-spin round total that the congratulations panel announces.
+      if (lastResult != null)
+      {
+        playerData = lastResult.playerData;
+        uiManager.OnSpinCompleted(lastResult);
+        lastResult = null;
+      }
+
+      StartFreeSpins(round);
+      yield break;
+    }
 
     ResumeAfterSpecialFeature();
   }
@@ -400,25 +465,16 @@ public class GameManager : MonoBehaviour
   {
     lastResult = result;
 
-    // CRITICAL FIX: Update free spin counter IMMEDIATELY when server response arrives
-    // This ensures the display shows the exact server-authoritative played count without lag
+    // The server's remaining count is taken as soon as it lands, so the round-over check
+    // never runs on a stale value.
+    //
+    // The DISPLAYED count is deliberately not touched here. It ticks in UIManager.OnSpinStarted
+    // instead, as the next spin's reels start — updating it now would advance the number
+    // partway through the spin the player is still watching.
     if (isInFreeSpins && result.serverSpinsRemaining >= 0)
     {
       freeSpinsRemaining = result.serverSpinsRemaining;
-      freeSpinsUsed = result.serverSpinsUsed;
-      // The wheel used to award extra free spins that were withheld from this count until
-      // the player pressed Take on its popup. With the wheel gone the server total is shown
-      // as-is; a Rich Piggies retrigger will need its own deferral if it awards mid-round.
-      uiManager.UpdateFreeSpinCount(freeSpinsUsed, result.serverTotalSpins);
-    }
-
-    if (result.winLines != null)
-    {
-      for (int i = 0; i < result.winLines.Count; i++)
-      {
-        var line = result.winLines[i];
-
-      }
+      freeSpinsUsed = currentRound != null ? currentRound.totalSpins - freeSpinsRemaining : 0;
     }
   }
 
@@ -428,10 +484,10 @@ public class GameManager : MonoBehaviour
 
     uiManager.OnSpinCompleted(lastResult);
 
-    // Extract server-authoritative values before nullifying lastResult
+    // Extract server-authoritative values before nullifying lastResult. Only remaining and
+    // isRoundOver are real — serverSpinsUsed and serverTotalRoundWin are not populated by the
+    // converter for Rich Piggies, so the round's totals come from currentRound instead.
     int serverSpinsRemaining = lastResult.serverSpinsRemaining;
-    int serverSpinsUsed = lastResult.serverSpinsUsed;
-    double serverTotalRoundWin = lastResult.serverTotalRoundWin;
     bool isRoundOver = lastResult.isRoundOver;
 
     // Note: freeSpinsRemaining already updated in OnSpinResultReceived
@@ -442,13 +498,14 @@ public class GameManager : MonoBehaviour
     }
 
 
-    // Check if free spins were just triggered (initial trigger from base game)
-    if (lastResult.freeSpinData != null && lastResult.freeSpinData.isTriggered && !isInFreeSpins)
-    {
-      StartFreeSpins(lastResult.freeSpinData.spinsAwarded);
-      lastResult = null;
-      return;
-    }
+    // NOTE: the round's running total is folded in at REEL STOP (OnReelsStoppedComplete), not
+    // here. This method runs after the win presentation, long after the HUD has already been
+    // asked to show the new total — accumulating here left the bottom bar one spin behind for
+    // the whole round.
+    //
+    // A free-spin TRIGGER is not handled here either: it is latched from
+    // payload.triggeredFeatures while the reels are still spinning and presented after the win
+    // animation, in ProcessSpecialFeaturesAfterWin.
 
     lastResult = null;
 
@@ -491,8 +548,7 @@ public class GameManager : MonoBehaviour
 
       if (isRoundOver || freeSpinsRemaining <= 0)
       {
-        // Always use server-authoritative spinsUsed
-        EndFreeSpins(serverTotalRoundWin, serverSpinsUsed);
+        EndFreeSpins();
       }
       else
       {
@@ -536,7 +592,6 @@ public class GameManager : MonoBehaviour
     isAutoPlaying = true;
     autoPlayTotalRounds = rounds;
     autoPlayRemainingRounds = rounds;
-    wasAutoPlayingBeforeFreeSpins = false;
 
     uiManager.OnAutoPlayStarted();
     RequestSpin();
@@ -546,80 +601,66 @@ public class GameManager : MonoBehaviour
   {
     isAutoPlaying = false;
     autoPlayRemainingRounds = 0;
-    wasAutoPlayingBeforeFreeSpins = false;
 
     uiManager.OnAutoPlayStopped();
   }
 
-  internal bool ShouldResumeAutoPlay()
-  {
-    return wasAutoPlayingBeforeFreeSpins && (savedAutoPlayTotalRounds == -1 || savedAutoPlayRemainingRounds > 0);
-  }
-
-  internal void ResumeAutoPlay()
-  {
-    if (!ShouldResumeAutoPlay()) return;
-
-    int remaining = savedAutoPlayRemainingRounds;
-    int total = savedAutoPlayTotalRounds;
-    wasAutoPlayingBeforeFreeSpins = false;
-
-    if (currentState != GameState.Idle) return;
-
-    double totalPay = GetTotalPay();
-    if (playerData.balance < totalPay)
-    {
-      if (popupManager != null) popupManager.ShowInsufficientFundsError();
-      return;
-    }
-
-    isAutoPlaying = true;
-    autoPlayTotalRounds = total;
-    autoPlayRemainingRounds = remaining;
-
-    uiManager.OnAutoPlayStarted();
-    RequestSpin();
-  }
+  // NOTE: autoplay is not resumed after a free-spin round. A trigger ends it outright (see
+  // StartFreeSpins), so the suspend/restore pair the CNY template had has been removed rather
+  // than left in place describing behaviour that no longer happens.
 
   #endregion
 
   #region Free Spins
 
-  private void StartFreeSpins(int spins)
+  /// <summary>
+  /// Enter a free-spin round and hand the screen to <see cref="FreeSpinPresenter"/>.
+  ///
+  /// The round does NOT start spinning here. waitingForFreeSpinStart blocks RequestSpin until
+  /// the presenter's trigger popup is dismissed, at which point it calls
+  /// <see cref="StartFirstFreeSpin"/> itself.
+  /// </summary>
+  private void StartFreeSpins(FreeSpinRound round)
   {
+    currentRound = round;
+
     isInFreeSpins = true;
-    freeSpinsRemaining = spins;
+    freeSpinsRemaining = round.totalSpins;
     freeSpinsUsed = 0;
     waitingForFreeSpinStart = true;
     AudioManager.Instance?.PlayFreeSpinBg();
 
-    int prevTotal = autoPlayTotalRounds;
-    int prevRemaining = autoPlayRemainingRounds;
+    // A trigger ENDS autoplay outright rather than suspending it — the round takes the screen
+    // over completely, and handing it back to an autoplay the player set up minutes ago is not
+    // what they would expect. The CNY template's suspend/restore pair has been removed
+    // entirely rather than left inert.
+    if (isAutoPlaying) StopAutoPlay();
 
-    if (isAutoPlaying)
-    {
-      StopAutoPlay();
-      wasAutoPlayingBeforeFreeSpins = true;
-      savedAutoPlayTotalRounds = prevTotal;
-      savedAutoPlayRemainingRounds = (prevTotal != -1) ? (prevRemaining - 1) : -1;
-    }
-
-    uiManager.OnFreeSpinsStarted(spins);
+    uiManager.OnFreeSpinsStarted(round.totalSpins);
 
     currentState = GameState.Idle;
+
+    if (freeSpinPresenter == null)
+    {
+      // Without the presenter there is no popup to dismiss, so nothing would ever clear
+      // waitingForFreeSpinStart and the game would sit idle forever.
+      Debug.LogError("[GameManager] A free-spin round triggered but freeSpinPresenter is not " +
+                     "assigned — starting the round with no trigger presentation. Assign it " +
+                     "in the Inspector.", this);
+      StartFirstFreeSpin();
+      return;
+    }
+
+    freeSpinPresenter.BeginTrigger(round);
   }
 
+  /// <summary>
+  /// Called by the presenter as its trigger popup closes. Starts the reels immediately — the
+  /// intro popups play over the top of them, held open by IsIntroBlocking.
+  /// </summary>
   internal void StartFirstFreeSpin()
   {
     waitingForFreeSpinStart = false;
-
-    StartCoroutine(DelayBeforeFirstFreeSpin());
-  }
-
-
-  private IEnumerator DelayBeforeFirstFreeSpin()
-  {
-    yield return new WaitForSeconds(0.5f);
     RequestSpin();
   }
 
@@ -636,11 +677,31 @@ public class GameManager : MonoBehaviour
     RequestSpin();
   }
 
-  private void EndFreeSpins(double totalRoundWin, int totalSpinsUsed)
+  private void EndFreeSpins()
   {
+    StartCoroutine(EndFreeSpinsRoutine());
+  }
+
+  /// <summary>
+  /// Close the round out. isInFreeSpins is cleared only AFTER the outro finishes, so the HUD
+  /// keeps its free-spin dressing — the counter, the accumulated win, the locked controls —
+  /// right through the congratulations panel rather than snapping back behind it.
+  /// </summary>
+  private IEnumerator EndFreeSpinsRoutine()
+  {
+    if (freeSpinPresenter != null && currentRound != null)
+    {
+      freeSpinPresenter.BeginOutro(currentRound);
+      yield return freeSpinPresenter.WaitForCompletion();
+    }
+
     isInFreeSpins = false;
     freeSpinsRemaining = 0;
     AudioManager.Instance?.PlayMainBg();
+
+    double totalRoundWin = currentRound != null ? currentRound.accumulatedWin : 0;
+    int totalSpinsUsed = currentRound != null ? currentRound.spinsUsed : 0;
+    currentRound = null;
 
     uiManager.OnFreeSpinsEnded(totalRoundWin, totalSpinsUsed);
 
@@ -659,7 +720,6 @@ public class GameManager : MonoBehaviour
       spinCoroutine = null;
     }
 
-    wasAutoPlayingBeforeFreeSpins = false;
     if (isAutoPlaying)
     {
       StopAutoPlay();

@@ -63,6 +63,50 @@ internal static class CoinAnimator
   }
 
   /// <summary>
+  /// Loop whatever frames are already authored on <paramref name="animation"/> in the scene.
+  /// For a decorative animation whose sprites belong to the prefab rather than to the caller.
+  /// </summary>
+  internal static bool PlayLoop(ImageAnimation animation, float speed)
+  {
+    if (animation == null) return false;
+    return Play(animation, animation.textureArray, speed);
+  }
+
+  /// <summary>
+  /// Play the animation's own frames exactly ONCE and call <paramref name="onFinished"/> at
+  /// the end of the pass.
+  ///
+  /// Note the callback fires from inside ImageAnimation's own Invoke chain and the component
+  /// does not guarantee it only fires once, so it is latched here — a double call would
+  /// advance a sequencing counter twice and cut the beat short, the same trap
+  /// SlotView.PlayMysteryReveal guards against.
+  /// </summary>
+  internal static bool PlayOnce(ImageAnimation animation, float speed, Action onFinished)
+  {
+    if (animation == null || animation.textureArray == null || animation.textureArray.Count == 0)
+    {
+      onFinished?.Invoke();
+      return false;
+    }
+
+    animation.CancelAllPending();
+    animation.doLoopAnimation = false;
+
+    bool reported = false;
+    animation.onLoopComplete = _ =>
+    {
+      if (reported) return;
+      reported = true;
+      onFinished?.Invoke();
+    };
+
+    if (speed > 0f) animation.AnimationSpeed = speed;
+
+    animation.StartAnimation();
+    return true;
+  }
+
+  /// <summary>
   /// Stop a coin spinning. ImageAnimation.StopAnimation repaints the renderer with
   /// textureArray[0] on its way out, so a landing coin comes to rest on its idle pose rather
   /// than on whatever frame it happened to be mid-tumble. Safe on a coin that never started.

@@ -141,8 +141,30 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TMP_Text ruleSymbol9Text;
 
     [Header("Free Spin Count Display - Game Screen")]
-    [SerializeField] private GameObject freeSpinCountContainer;
-    [SerializeField] private TMP_Text remainingFreeSpinsText;
+    [Tooltip("The FreeSpinDisplay panel. Shown for the whole round, from the trigger popup " +
+             "closing to the outro finishing.\n\n" +
+             "SINGLE reference, not a landscape/portrait pair — this panel lives inside the " +
+             "shared SlotObject, the way WinPanel does, so both orientations show the same " +
+             "object.")]
+    [SerializeField] private GameObject freeSpinDisplayRoot;
+
+    [Tooltip("Spin the player is on, 1-based. Sprite-sheet text — needs a sprite asset from " +
+             "Assets/Fonts/CustomTextFonts, or it shows the literal <sprite=N> tags.")]
+    [SerializeField] private TMP_Text currentFSText;
+
+    [Tooltip("Total spins awarded this round. Sprite-sheet text, as above.")]
+    [SerializeField] private TMP_Text totalFSText;
+
+    [Header("Backgrounds — base vs free spin")]
+    [Tooltip("Base-game background. These four live INSIDE the two backgrounds OCController " +
+             "toggles for orientation — they do not replace it, so both orientations are " +
+             "cross-faded together and rotating mid-round finds the other one already correct.")]
+    [SerializeField] private CanvasGroup baseBackground;
+    [SerializeField] private CanvasGroup baseBackgroundPortrait;
+    [SerializeField] private CanvasGroup freeSpinBackground;
+    [SerializeField] private CanvasGroup freeSpinBackgroundPortrait;
+
+    [SerializeField] private float backgroundFadeDuration = 0.5f;
 
     [Header("Ping Display")]
     [SerializeField] private TMP_Text pingText;
@@ -172,10 +194,10 @@ public class UIManager : MonoBehaviour
 
     private Tween balanceTween;
     private Tween winTween;
-    private double totalFreeSpinWin = 0;
+    // The round total the FreeSpinDisplay counts against. The round's accumulated WIN lives on
+    // GameManager's FreeSpinRound, which is what the bottom bar and the congratulations panel
+    // both read — there is no second copy of it here.
     private int totalFreeSpinsAwarded = 0;
-
-    private int initialFreeSpins = 0;
 
     // Optimistic balance: the locally-deducted balance shown while the spin is in flight
     private double optimisticBalance = 0;
@@ -248,7 +270,7 @@ public class UIManager : MonoBehaviour
         SetGameObjectActive(settingsPanel, settingsPanelPortrait, false);
         if (gameRulesPanel) gameRulesPanel.SetActive(false);
         if (guidePanel) guidePanel.SetActive(false);
-        if (freeSpinCountContainer) freeSpinCountContainer.SetActive(false);
+        HideFreeSpinDisplay();
         if (transitionBackFilm) transitionBackFilm.gameObject.SetActive(false);
         UpdatePingDisplay("-- ms");
     }
@@ -500,7 +522,16 @@ public class UIManager : MonoBehaviour
 
         if (gameManager.isInFreeSpins)
         {
-            SetSpinStopButtonStates(isSpinningState: true, isInteractable: false);
+            // Stop is live during free spins exactly as it is in the base game — the player is
+            // watching the same reels. Only the BET controls stay locked, because the stake is
+            // fixed for the round.
+            SetSpinStopButtonStates(isSpinningState: true, isInteractable: true);
+
+            // The counter ticks HERE, as this spin's reels start, rather than when its result
+            // lands — so the player sees "2 of 10" for the whole of spin 2 instead of the
+            // number changing under them partway through it.
+            if (gameManager.currentRound != null)
+                UpdateFreeSpinCount(gameManager.currentRound.spinsUsed);
         }
         else
         {
@@ -534,20 +565,28 @@ public class UIManager : MonoBehaviour
     internal void OnSpinStopping(SpinResult result = null)
     {
         UpdateBalanceDisplay();
-        if (result != null)
-        {
-            double displayWin = (gameManager != null && gameManager.isInFreeSpins) ? result.serverTotalRoundWin : result.winAmount;
-            UpdateWinDisplay(displayWin);
-        }
+        if (result != null) UpdateWinDisplay(DisplayWinFor(result));
+    }
+
+    /// <summary>
+    /// What the win field shows for this spin: the round's running total during free spins,
+    /// this spin's win otherwise.
+    ///
+    /// NOT result.serverTotalRoundWin — the converter never populates it (it is set to this
+    /// spin's own winAmount), so the round total has to come from the client's own
+    /// accumulation on FreeSpinRound.
+    /// </summary>
+    private double DisplayWinFor(SpinResult result)
+    {
+        if (gameManager == null || !gameManager.isInFreeSpins) return result.winAmount;
+
+        return gameManager.currentRound != null ? gameManager.currentRound.accumulatedWin
+                                                : result.winAmount;
     }
 
     internal void OnSpinCompleted(SpinResult result = null)
     {
-        if (result != null)
-        {
-            double displayWin = (gameManager != null && gameManager.isInFreeSpins) ? result.serverTotalRoundWin : result.winAmount;
-            UpdateWinDisplay(displayWin);
-        }
+        if (result != null) UpdateWinDisplay(DisplayWinFor(result));
         UpdateBalanceDisplay();
 
         if (gameManager.isAutoPlaying)
@@ -556,6 +595,11 @@ public class UIManager : MonoBehaviour
         }
         else if (gameManager.isInFreeSpins)
         {
+            // The reels have LANDED. Stop is live only while they are turning (see
+            // OnSpinStarted) — leaving it interactable here would be a button that looks
+            // pressable and does nothing, since RequestStop ignores anything but Spinning.
+            // The base game shows the spin button at this point; free spins cannot, because
+            // the player does not start these spins, so a greyed Stop is what is left.
             SetSpinStopButtonStates(isSpinningState: true, isInteractable: false);
         }
         else
@@ -612,6 +656,7 @@ public class UIManager : MonoBehaviour
         }
         else if (gameManager.isInFreeSpins)
         {
+            // Presentation over, reels already down — same reasoning as OnSpinCompleted.
             SetSpinStopButtonStates(isSpinningState: true, isInteractable: false);
         }
         else
@@ -1064,89 +1109,119 @@ public class UIManager : MonoBehaviour
 
     #region Free Spins Flow
 
+    /// <summary>
+    /// HUD-only preparation for a round. The ANNOUNCEMENT is FreeSpinPresenter's job — it
+    /// runs the trigger popup and only then starts the first spin, so nothing here may kick
+    /// the round off.
+    /// </summary>
     internal void OnFreeSpinsStarted(int spins)
     {
-        OnFreeSpinsTriggered(spins);
-    }
+        totalFreeSpinsAwarded = spins;
 
-    internal void OnFreeSpinsTriggered(int spinsAwarded)
-    {
-        // [POPUP TODO] The CNY universal popup announced the award here and only started the
-        // round once the player pressed Take. It has been deleted along with the rest of the
-        // CNY UI, so the round starts immediately for now. Re-add the beat as a
-        // WinPopupController tier once the Rich Piggies free-spin popup is authored.
-        StartFreeSpinsSequence(spinsAwarded);
-    }
-
-    private void StartFreeSpinsSequence(int spinsAwarded)
-    {
-        totalFreeSpinWin = 0;
-        initialFreeSpins = spinsAwarded;
-        totalFreeSpinsAwarded = spinsAwarded;
-        
         if (gameLogoObject) gameLogoObject.SetActive(false);
 
-        UpdateFreeSpinCount(0, spinsAwarded);
-        UpdateWinDisplay(0);
-        gameManager.StartFirstFreeSpin();
+        // The win field is deliberately NOT cleared. The base spin that triggered the round
+        // has already won something — its line wins plus the 1x total stake the trigger itself
+        // pays — and the round's total is seeded with that, so the number on screen carries
+        // straight on and climbs rather than blanking and starting again.
     }
 
-    internal void OnFreeSpinsEnded(double serverTotalRoundWin, int serverTotalSpinsUsed)
+    /// <summary>
+    /// HUD-only teardown, run after FreeSpinPresenter's outro has finished. The congratulations
+    /// panel and the background switch happen there; what is left here is handing the base-game
+    /// controls back.
+    /// </summary>
+    internal void OnFreeSpinsEnded(double totalRoundWin, int totalSpinsUsed)
     {
-        initialFreeSpins = 0;
         totalFreeSpinsAwarded = 0;
 
-        // [POPUP TODO] As above — the round-total popup went with the CNY UI, so the
-        // transition back to the base game runs straight away. serverTotalRoundWin is left
-        // as a parameter because that popup is what will need it.
-        StartCoroutine(EndFreeSpinsTransitionSequence());
-    }
-
-    private IEnumerator EndFreeSpinsTransitionSequence()
-    {
-        // 1. Fade in back film
-        if (transitionBackFilm != null)
-        {
-            transitionBackFilm.gameObject.SetActive(true);
-            transitionBackFilm.alpha = 0f;
-            yield return transitionBackFilm.DOFade(1f, 0.5f).WaitForCompletion();
-            yield return new WaitForSeconds(0.2f);
-        }
-
-        // 2. Setup main slot UI state behind back film
-        if (freeSpinCountContainer) freeSpinCountContainer.SetActive(false);
+        HideFreeSpinDisplay();
         if (gameLogoObject) gameLogoObject.SetActive(true);
 
-        // Reset win display for base game after free spins end
-        UpdateWinDisplay(0);
+        // The round total stays on screen, as any base-game win would. The next spin's
+        // OnSpinStarted is what clears it.
+        UpdateWinDisplay(totalRoundWin);
 
         SetSpinStopButtonStates(isSpinningState: false, isInteractable: true);
         SetButtonInteractable(settingsOpenButton, settingsOpenButtonPortrait, true);
         SetBetControlsEnabled(true);
-
-        // 3. Fade out back film
-        if (transitionBackFilm != null)
-        {
-            yield return transitionBackFilm.DOFade(0f, 0.5f).WaitForCompletion();
-            transitionBackFilm.gameObject.SetActive(false);
-        }
-
-        // 4. Resume autoplay if it was active before free spins and has leftover rounds
-        if (gameManager != null && gameManager.ShouldResumeAutoPlay())
-        {
-            gameManager.ResumeAutoPlay();
-        }
     }
 
+    /// <summary>
+    /// Show the in-round counter, starting on spin 1 of <paramref name="totalSpins"/>.
+    /// Called by the presenter as the trigger popup closes.
+    /// </summary>
+    internal void ShowFreeSpinDisplay(int totalSpins)
+    {
+        totalFreeSpinsAwarded = totalSpins;
+
+        if (freeSpinDisplayRoot) freeSpinDisplayRoot.SetActive(true);
+        SpriteNumberFormatter.Apply(totalFSText, totalSpins, maxDecimals: 0, grouping: false);
+
+        UpdateFreeSpinCount(0, totalSpins);
+    }
+
+    internal void HideFreeSpinDisplay()
+    {
+        if (freeSpinDisplayRoot) freeSpinDisplayRoot.SetActive(false);
+    }
+
+
+    /// <summary>
+    /// Update the counter from the server's own played count.
+    ///
+    /// Displayed 1-BASED: while the first free spin is on screen the counter reads 1, not 0,
+    /// so it ticks to 2 exactly as the second spin's reels start rather than lagging a spin
+    /// behind. Clamped to the total so the last spin cannot read "11 of 10".
+    /// </summary>
     internal void UpdateFreeSpinCount(int playedSpins, int totalSpins = -1)
     {
         if (totalSpins > 0)
         {
             totalFreeSpinsAwarded = totalSpins;
+            SpriteNumberFormatter.Apply(totalFSText, totalFreeSpinsAwarded,
+                                        maxDecimals: 0, grouping: false);
         }
 
-        if (freeSpinCountContainer) freeSpinCountContainer.SetActive(true);
-        if (remainingFreeSpinsText) remainingFreeSpinsText.text = $"FREE GAME  {playedSpins}  OF  {totalFreeSpinsAwarded}";
+        int current = Mathf.Clamp(playedSpins + 1, 1, Mathf.Max(1, totalFreeSpinsAwarded));
+        SpriteNumberFormatter.Apply(currentFSText, current, maxDecimals: 0, grouping: false);
+    }
+
+    /// <summary>
+    /// Cross-fade between the base-game and free-spin backgrounds.
+    ///
+    /// Both orientations are switched together, because OCController owns which orientation is
+    /// VISIBLE and may swap that at any moment — these four objects live inside the two
+    /// backgrounds it toggles rather than replacing them.
+    /// </summary>
+    internal IEnumerator SwitchBackground(bool freeSpin)
+    {
+        var baseGroups = new[] { baseBackground, baseBackgroundPortrait };
+        var freeSpinGroups = new[] { freeSpinBackground, freeSpinBackgroundPortrait };
+
+        var fadingIn = freeSpin ? freeSpinGroups : baseGroups;
+        var fadingOut = freeSpin ? baseGroups : freeSpinGroups;
+
+        // Raised to full alpha but transparent, so the outgoing background is never briefly
+        // showing through to an empty screen.
+        foreach (var group in fadingIn)
+        {
+            if (group == null) continue;
+            group.gameObject.SetActive(true);
+            group.alpha = 0f;
+        }
+
+        Tween last = null;
+        foreach (var group in fadingIn)
+            if (group != null) last = group.DOFade(1f, backgroundFadeDuration).SetEase(Ease.InOutQuad);
+
+        foreach (var group in fadingOut)
+            if (group != null) group.DOFade(0f, backgroundFadeDuration).SetEase(Ease.InOutQuad);
+
+        if (last != null) yield return last.WaitForCompletion();
+
+        foreach (var group in fadingOut)
+            if (group != null) group.gameObject.SetActive(false);
     }
 
     #endregion

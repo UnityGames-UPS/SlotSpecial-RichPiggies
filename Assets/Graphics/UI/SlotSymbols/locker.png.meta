@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: d3514df32175f4eee84e5caa7a4c7052
+guid: bc7f749ff337243e9972fb451c1f5a3f
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 198538158556077393
-    second: locker_0
+      213: 5042694745440877535
+    second: LOCKER_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,23 +126,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: locker_0
+      name: LOCKER_0
       rect:
         serializedVersion: 2
-        x: 79
-        y: 112
-        width: 1096
-        height: 1047
+        x: 0
+        y: 0
+        width: 225
+        height: 218
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 15d581f376951c200800000000000000
-      internalID: 198538158556077393
+      spriteID: fdb7bb457204bf540800000000000000
+      internalID: 5042694745440877535
       vertices: []
       indices: 
       edges: []
@@ -151,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 8a84ade23c1a444fbb3efceabb417e4c
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      locker_0: 198538158556077393
+      LOCKER_0: 5042694745440877535
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
