@@ -13,7 +13,6 @@ public class UIManager : MonoBehaviour
 
     [Header("Loading & Intro")]
     [SerializeField] private GameObject gameScreen;
-    [SerializeField] private GameObject gameLogoObject;
 
 
 
@@ -1118,8 +1117,6 @@ public class UIManager : MonoBehaviour
     {
         totalFreeSpinsAwarded = spins;
 
-        if (gameLogoObject) gameLogoObject.SetActive(false);
-
         // The win field is deliberately NOT cleared. The base spin that triggered the round
         // has already won something — its line wins plus the 1x total stake the trigger itself
         // pays — and the round's total is seeded with that, so the number on screen carries
@@ -1136,7 +1133,6 @@ public class UIManager : MonoBehaviour
         totalFreeSpinsAwarded = 0;
 
         HideFreeSpinDisplay();
-        if (gameLogoObject) gameLogoObject.SetActive(true);
 
         // The round total stays on screen, as any base-game win would. The next spin's
         // OnSpinStarted is what clears it.
