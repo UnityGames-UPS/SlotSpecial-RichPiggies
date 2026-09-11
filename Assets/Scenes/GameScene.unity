@@ -520,12 +520,12 @@ GameObject:
   - component: {fileID: 10816758}
   - component: {fileID: 10816760}
   m_Layer: 5
-  m_Name: MotarPiggyAnim
+  m_Name: MotorboatPiggyAnim
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &10816757
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8668,7 +8668,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 248405209}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -8677,7 +8677,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -35}
   m_SizeDelta: {x: 1096, y: 656}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &248405211
@@ -9475,7 +9475,6 @@ RectTransform:
   - {fileID: 627276383}
   - {fileID: 1633063687}
   - {fileID: 1422656206}
-  - {fileID: 1462445608}
   - {fileID: 1502470263}
   m_Father: {fileID: 2095227330}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -9947,81 +9946,6 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 289252408}
-  m_CullTransparentMesh: 1
---- !u!1 &299829851
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 299829852}
-  - component: {fileID: 299829854}
-  - component: {fileID: 299829853}
-  m_Layer: 5
-  m_Name: BlackOverlay
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &299829852
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 299829851}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1800969104}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -35}
-  m_SizeDelta: {x: 1096, y: 656}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &299829853
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 299829851}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.41960785}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &299829854
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 299829851}
   m_CullTransparentMesh: 1
 --- !u!1 &300927622
 GameObject:
@@ -10694,6 +10618,7 @@ MonoBehaviour:
   motorboatAnim: {fileID: 10816760}
   motorboatRoot: {fileID: 10816756}
   motorboatAnimationSpeed: 55
+  motorboatBackgroundSwitchAt: 0.2
 --- !u!4 &338623147
 Transform:
   m_ObjectHideFlags: 0
@@ -30192,31 +30117,21 @@ MonoBehaviour:
   - {fileID: 627276383}
   - {fileID: 1633063687}
   - {fileID: 1422656206}
-  - {fileID: 1462445608}
   - {fileID: 1502470263}
   - {fileID: 1453742706}
-  squareResizedObjects:
-  - {fileID: 0}
-  - {fileID: 0}
   landscapePanelObject: {fileID: 161473516}
   portraitPanelObject: {fileID: 360998096}
-  landscapeBackground: {fileID: 612787880}
-  portraitBackground: {fileID: 1228590864}
   landscapeReferenceResolution: {x: 1920, y: 1080}
   portraitReferenceResolution: {x: 1080, y: 1920}
   landscapeResizedObjectSize: {x: 1920, y: 1080}
   portraitResizedObjectSize: {x: 1080, y: 1920}
-  landscapeSquareResizedObjectSize: {x: 1920, y: 1080}
-  portraitSquareResizedObjectSize: {x: 1920, y: 1920}
   landscapeSlotScale: {x: 1, y: 1, z: 1}
   portraitSlotScale: {x: 0.93, y: 0.93, z: 0.93}
   landscapeSlotPosition: {x: 0, y: 0, z: 0}
   portraitSlotPosition: {x: 0, y: -234.5, z: 0}
-  logoObject: {fileID: 0}
-  landscapeLogoScale: {x: 1, y: 1, z: 1}
-  portraitLogoScale: {x: 1.27, y: 1.27, z: 1.27}
-  landscapeLogoPosition: {x: 0, y: 355}
-  portraitLogoPosition: {x: 0, y: 500}
+  motarPiggyObject: {fileID: 10816757}
+  landscapeMotarPiggyY: -9
+  portraitMotarPiggyY: -228.14
   infoPageScrollObject: {fileID: 1439971687}
   guideScrollObject: {fileID: 1776222426}
   transitionDuration: 0.2
@@ -30766,7 +30681,6 @@ MonoBehaviour:
   winAmountTextPortrait: {fileID: 549640304}
   winTextObjectPortrait: {fileID: 1045263582}
   goodLuckObjectPortrait: {fileID: 88634191}
-  transitionBackFilm: {fileID: 1462445609}
   spinButton: {fileID: 173060499}
   stopButton: {fileID: 344352412}
   spinButtonPortrait: {fileID: 598712220}
@@ -49221,94 +49135,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1460801349}
   m_CullTransparentMesh: 1
---- !u!1 &1462445607
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1462445608}
-  - component: {fileID: 1462445611}
-  - component: {fileID: 1462445610}
-  - component: {fileID: 1462445609}
-  m_Layer: 5
-  m_Name: BlackFlim
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &1462445608
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1462445607}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 274675663}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1920, y: 1080}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!225 &1462445609
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1462445607}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
---- !u!114 &1462445610
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1462445607}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 100
---- !u!222 &1462445611
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1462445607}
-  m_CullTransparentMesh: 1
 --- !u!1 &1465749877
 GameObject:
   m_ObjectHideFlags: 0
@@ -60558,7 +60384,6 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 299829852}
   - {fileID: 1362137689}
   - {fileID: 2000616661}
   - {fileID: 574120067}

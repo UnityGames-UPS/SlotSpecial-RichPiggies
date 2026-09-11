@@ -36,10 +36,6 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject winTextObjectPortrait;
     [SerializeField] private GameObject goodLuckObjectPortrait;
 
-    [Header("Free Spins Transition")]
-    [Tooltip("Black film faded over the screen when a free-spin round ends.")]
-    [SerializeField] private CanvasGroup transitionBackFilm;
-
     [Header("Spin Button")]
     [SerializeField] private Button spinButton;
     [SerializeField] private Button stopButton;
@@ -155,15 +151,18 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TMP_Text totalFSText;
 
     [Header("Backgrounds — base vs free spin")]
-    [Tooltip("Base-game background. These four live INSIDE the two backgrounds OCController " +
-             "toggles for orientation — they do not replace it, so both orientations are " +
-             "cross-faded together and rotating mid-round finds the other one already correct.")]
+    [Tooltip("Base-game background. UIManager is the only owner of these four — it picks the " +
+             "one matching both the orientation and the game mode, and deactivates the rest.")]
     [SerializeField] private CanvasGroup baseBackground;
     [SerializeField] private CanvasGroup baseBackgroundPortrait;
     [SerializeField] private CanvasGroup freeSpinBackground;
     [SerializeField] private CanvasGroup freeSpinBackgroundPortrait;
 
     [SerializeField] private float backgroundFadeDuration = 0.5f;
+
+    private bool isFreeSpinBackground = false;
+    // Same rule OCController uses: only MobilePortrait swaps to the portrait layout.
+    private bool isPortraitLayout = false;
 
     [Header("Ping Display")]
     [SerializeField] private TMP_Text pingText;
@@ -218,6 +217,10 @@ public class UIManager : MonoBehaviour
 
     private void Awake()
     {
+        // All four backgrounds are active in the scene; settle on base/landscape until
+        // OrientationChange.Start reports the real orientation.
+        ApplyBackgroundVisibility();
+
         if (jsFunctCalls != null)
         {
             jsFunctCalls.RegisterVisibilityListener(gameObject.name);
@@ -270,7 +273,6 @@ public class UIManager : MonoBehaviour
         if (gameRulesPanel) gameRulesPanel.SetActive(false);
         if (guidePanel) guidePanel.SetActive(false);
         HideFreeSpinDisplay();
-        if (transitionBackFilm) transitionBackFilm.gameObject.SetActive(false);
         UpdatePingDisplay("-- ms");
     }
 
@@ -1183,41 +1185,75 @@ public class UIManager : MonoBehaviour
         SpriteNumberFormatter.Apply(currentFSText, current, maxDecimals: 0, grouping: false);
     }
 
+    private void OnEnable()
+    {
+        OrientationChange.OnOrientationChanged += HandleOrientationChanged;
+    }
+
+    private void OnDisable()
+    {
+        OrientationChange.OnOrientationChanged -= HandleOrientationChanged;
+    }
+
+    private void HandleOrientationChanged(OrientationChange.OrientationMode mode, int width, int height)
+    {
+        isPortraitLayout = mode == OrientationChange.OrientationMode.MobilePortrait;
+        ApplyBackgroundVisibility();
+    }
+
     /// <summary>
-    /// Cross-fade between the base-game and free-spin backgrounds.
-    ///
-    /// Both orientations are switched together, because OCController owns which orientation is
-    /// VISIBLE and may swap that at any moment — these four objects live inside the two
-    /// backgrounds it toggles rather than replacing them.
+    /// Snap the four backgrounds to the current state: exactly one — matching both the
+    /// orientation and base/free-spin mode — is active at full alpha, the rest are inactive.
+    /// Kills any cross-fade in progress, so rotating mid-fade just lands on the right one.
+    /// </summary>
+    private void ApplyBackgroundVisibility()
+    {
+        SetBackgroundShown(baseBackground, !isFreeSpinBackground && !isPortraitLayout);
+        SetBackgroundShown(baseBackgroundPortrait, !isFreeSpinBackground && isPortraitLayout);
+        SetBackgroundShown(freeSpinBackground, isFreeSpinBackground && !isPortraitLayout);
+        SetBackgroundShown(freeSpinBackgroundPortrait, isFreeSpinBackground && isPortraitLayout);
+    }
+
+    private static void SetBackgroundShown(CanvasGroup group, bool shown)
+    {
+        if (group == null) return;
+        group.DOKill();
+        group.alpha = shown ? 1f : 0f;
+        group.gameObject.SetActive(shown);
+    }
+
+    /// <summary>
+    /// Cross-fade between the base-game and free-spin backgrounds. Only the current
+    /// orientation's pair is faded; the hidden orientation is settled by
+    /// ApplyBackgroundVisibility at the end (and on any rotation).
     /// </summary>
     internal IEnumerator SwitchBackground(bool freeSpin)
     {
-        var baseGroups = new[] { baseBackground, baseBackgroundPortrait };
-        var freeSpinGroups = new[] { freeSpinBackground, freeSpinBackgroundPortrait };
+        isFreeSpinBackground = freeSpin;
 
-        var fadingIn = freeSpin ? freeSpinGroups : baseGroups;
-        var fadingOut = freeSpin ? baseGroups : freeSpinGroups;
+        var baseGroup = isPortraitLayout ? baseBackgroundPortrait : baseBackground;
+        var freeSpinGroup = isPortraitLayout ? freeSpinBackgroundPortrait : freeSpinBackground;
+        var fadingIn = freeSpin ? freeSpinGroup : baseGroup;
+        var fadingOut = freeSpin ? baseGroup : freeSpinGroup;
 
-        // Raised to full alpha but transparent, so the outgoing background is never briefly
-        // showing through to an empty screen.
-        foreach (var group in fadingIn)
+        Tween fade = null;
+        if (fadingIn != null)
         {
-            if (group == null) continue;
-            group.gameObject.SetActive(true);
-            group.alpha = 0f;
+            // Raised transparent, so the outgoing background never shows through to an empty screen.
+            fadingIn.DOKill();
+            fadingIn.gameObject.SetActive(true);
+            fadingIn.alpha = 0f;
+            fade = fadingIn.DOFade(1f, backgroundFadeDuration).SetEase(Ease.InOutQuad);
+        }
+        if (fadingOut != null && fadingOut.gameObject.activeSelf)
+        {
+            fadingOut.DOKill();
+            fadingOut.DOFade(0f, backgroundFadeDuration).SetEase(Ease.InOutQuad);
         }
 
-        Tween last = null;
-        foreach (var group in fadingIn)
-            if (group != null) last = group.DOFade(1f, backgroundFadeDuration).SetEase(Ease.InOutQuad);
+        if (fade != null) yield return fade.WaitForCompletion();
 
-        foreach (var group in fadingOut)
-            if (group != null) group.DOFade(0f, backgroundFadeDuration).SetEase(Ease.InOutQuad);
-
-        if (last != null) yield return last.WaitForCompletion();
-
-        foreach (var group in fadingOut)
-            if (group != null) group.gameObject.SetActive(false);
+        ApplyBackgroundVisibility();
     }
 
     #endregion

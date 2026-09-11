@@ -166,6 +166,10 @@ internal class FreeSpinPresenter : MonoBehaviour
   [SerializeField] private ImageAnimation motorboatAnim;
   [SerializeField] private GameObject motorboatRoot;
   [SerializeField] private float motorboatAnimationSpeed = 5f;
+  [Tooltip("How far through the motorboat animation (0-1) the background switches back to " +
+           "the base game.")]
+  [Range(0f, 1f)]
+  [SerializeField] private float motorboatBackgroundSwitchAt = 0.4f;
 
   #endregion
 
@@ -662,13 +666,21 @@ internal class FreeSpinPresenter : MonoBehaviour
 
     yield return StartCoroutine(ShowCongratulations(round));
 
-    // The background switch and the motorboat run together — the boat crosses a screen that
-    // is already turning back into the base game.
+    // The background switches back part-way through the motorboat crossing, so the boat
+    // arrives over the free-spin scene and leaves over the base game.
+    Coroutine motorboat = StartCoroutine(PlayMotorboat());
+
+    // Read after PlayMotorboat has started: PlayOnce sets the speed the duration depends on.
+    float switchDelay = motorboatAnim != null
+        ? motorboatAnim.GetSequenceDuration() * motorboatBackgroundSwitchAt
+        : 0f;
+    if (switchDelay > 0f) yield return new WaitForSeconds(switchDelay);
+
     Coroutine backgroundSwitch = uiManager != null
         ? StartCoroutine(uiManager.SwitchBackground(freeSpin: false))
         : null;
 
-    yield return StartCoroutine(PlayMotorboat());
+    yield return motorboat;
 
     if (backgroundSwitch != null) yield return backgroundSwitch;
 

@@ -1414,10 +1414,10 @@ public class SlotView : MonoBehaviour
     }
 
     // The round total, for the win popup below.
-    double totalWinAmount = 0;
-    foreach (var winLine in winLines) totalWinAmount += winLine.winAmount;
-    if (totalWinAmount <= 0 && gameManager != null && gameManager.lastResult != null)
-      totalWinAmount = gameManager.lastResult.winAmount;
+    // The server's payload.winAmount is already the whole spin — lines plus any jackpot — and
+    // is what lands in the win field, so the popup shows exactly that.
+    double totalWinAmount = gameManager != null && gameManager.lastResult != null
+        ? gameManager.lastResult.winAmount : 0;
 
     AudioManager.Instance?.PlayWinLinePhase1Start();
 
