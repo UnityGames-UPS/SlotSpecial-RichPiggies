@@ -85,6 +85,24 @@ public static class RichPiggiesSymbols
   public static bool IsJackpot(int id) => id >= Mega && id <= Mini;
   public static bool IsPaying(int id) => id >= BusinessPig && id <= Ten;
 
+  /// <summary>
+  /// Server meter key for a jackpot symbol id — "Mega" ... "Mini", CASE-SENSITIVE, the same
+  /// keys yellowFSCollections and meters.yellow use. Null for any non-jackpot id.
+  /// </summary>
+  public static string JackpotTierName(int id)
+  {
+    switch (id)
+    {
+      case Mega: return "Mega";
+      case Grand: return "Grand";
+      case Major: return "Major";
+      case Maxi: return "Maxi";
+      case Minor: return "Minor";
+      case Mini: return "Mini";
+      default: return null;
+    }
+  }
+
   /// <summary>WILD substitutes for everything except the three coins (and itself/Mystery).</summary>
   public static bool WildSubstitutesFor(int id) => IsPaying(id);
 }

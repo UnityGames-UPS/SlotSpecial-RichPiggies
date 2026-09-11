@@ -44,6 +44,39 @@ public class PigMeterController : MonoBehaviour
 
     [Tooltip("This tier's coin PNG sequence, in order. Looped for the whole flight.")]
     public List<Sprite> coinFrames = new List<Sprite>();
+
+    [Header("Yellow free-spin collection")]
+    [Tooltip("Jackpots/<Tier>Image/PanelImage, landscape. Hidden in the base game; faded in " +
+             "with the Yellow intro popup and out with the congratulations panel. A CanvasGroup " +
+             "is added at runtime if it has none.")]
+    public GameObject panel;
+    public GameObject panelPortrait;
+
+    [Tooltip("This tier's holes, landscape, in the ORDER they fill. The count is the tier's " +
+             "space count (Mega 6, Grand 5, Major 4, Maxi 3, Minor 2, Mini 2).")]
+    public List<JackpotHoleUI> holes = new List<JackpotHoleUI>();
+
+    [Tooltip("Same holes in the portrait layout, same order and count.")]
+    public List<JackpotHoleUI> holesPortrait = new List<JackpotHoleUI>();
+
+    [Header("Base-game increment effect")]
+    [Tooltip("Star shine played once when a Yellow coin's jackpot coin lands and raises this " +
+             "tier's multiplier. Its GameObject is switched on only while it plays.")]
+    public ImageAnimation shineEffect;
+    public ImageAnimation shineEffectPortrait;
+  }
+
+  /// <summary>One hole in a jackpot panel: the blast that plays on a hit, the gold fill after it.</summary>
+  [System.Serializable]
+  internal class JackpotHoleUI
+  {
+    [Tooltip("Blast sequence played once when a coin fills this hole. Frames go in its " +
+             "textureArray; its GameObject is switched on only while it plays.")]
+    public ImageAnimation blast;
+
+    [Tooltip("Gold fill Image, child of the hole. Faded in after the blast, out when the tier " +
+             "pays or the round ends.")]
+    public Image fill;
   }
 
   /// <summary>One pig: its two Spine graphics, its two coin destinations, its coin colour.</summary>
@@ -84,6 +117,12 @@ public class PigMeterController : MonoBehaviour
              "contribute to the trigger. Set the list in the Inspector.")]
     public List<Graphic> darkenTargets = new List<Graphic>();
     public List<Graphic> darkenTargetsPortrait = new List<Graphic>();
+
+    [Header("Meter increment effect")]
+    [Tooltip("StarAndRingEffect played once when a coin moves this pig's meter. Blue and Red " +
+             "only — leave empty on Yellow. Its GameObject is switched on only while it plays.")]
+    public ImageAnimation meterEffect;
+    public ImageAnimation meterEffectPortrait;
   }
 
   [Header("References")]
@@ -154,6 +193,39 @@ public class PigMeterController : MonoBehaviour
   [Tooltip("ImageAnimation speed for the per-pig cash-drop animation.")]
   [SerializeField] private float cashAnimationSpeed = 5f;
 
+  [Header("Yellow free-spin jackpot collection")]
+  [SerializeField] private float panelFadeInDuration = 0.4f;
+  [SerializeField] private float panelFadeOutDuration = 0.4f;
+
+  [Tooltip("ImageAnimation speed for the hole blast.")]
+  [SerializeField] private float blastAnimationSpeed = 5f;
+
+  [SerializeField] private float fillFadeInDuration = 0.2f;
+  [SerializeField] private float fillFadeOutDuration = 0.35f;
+
+  [Header("Meter effects")]
+  [Tooltip("ImageAnimation speed for the Blue / Red StarAndRingEffect.")]
+  [SerializeField] private float meterEffectSpeed = 5f;
+
+  [Tooltip("ImageAnimation speed for the jackpot tier star shine.")]
+  [SerializeField] private float jackpotShineSpeed = 5f;
+
+  // Live one-shot effect routines, keyed by the landscape animation (or the portrait one when
+  // landscape is unwired), so a second coin on the same meter restarts its effect.
+  private readonly Dictionary<ImageAnimation, Coroutine> effectRoutines =
+      new Dictionary<ImageAnimation, Coroutine>();
+
+  // Holes the client has filled (or reserved for a coin still in flight), per tier.
+  private readonly Dictionary<string, int> filledHoles = new Dictionary<string, int>();
+
+  // Latched from the spin result as it arrives; consumed after that spin's win popup closes.
+  private readonly List<string> pendingAwardedTiers = new List<string>();
+  private Dictionary<string, int> pendingCollections;
+
+  private readonly List<Tween> jackpotTweens = new List<Tween>();
+  private readonly List<Coroutine> holeRoutines = new List<Coroutine>();
+  private bool jackpotPanelsShown;
+
   // Live glow tweens and blink coroutines, one per pig, so a round can be torn down without
   // walking the whole pigs list guessing at what is running.
   private readonly Dictionary<int, Tween> glowTweens = new Dictionary<int, Tween>();
@@ -173,6 +245,14 @@ public class PigMeterController : MonoBehaviour
   {
     if (orientation == null) orientation = Object.FindFirstObjectByType<OrientationChange>();
     if (gameManager == null) gameManager = Object.FindFirstObjectByType<GameManager>();
+
+    InitJackpotPanels();
+    HideAllEffects();
+  }
+
+  private void OnDestroy()
+  {
+    KillJackpotTweens();
   }
 
   #region Seeding and bet changes
@@ -193,6 +273,8 @@ public class PigMeterController : MonoBehaviour
 
     if (features.meters == null)
       Debug.LogWarning("[PigMeters] Init features carried no meters — meters start at zero.");
+
+    ValidateHoleCounts(features.yellowPig?.jackpotLevels);
 
     RenderAll();
   }
@@ -348,6 +430,96 @@ public class PigMeterController : MonoBehaviour
     graphic.AnimationState.SetAnimation(0, jumpAnimation, false);
     graphic.AnimationState.AddAnimation(0, idleAnimation, true, 0f);
   }
+
+  #region Meter increment effects
+
+  /// <summary>
+  /// Play the StarAndRingEffect on a Blue or Red meter, both orientations. Called by the coin
+  /// beat on touchdown when the coin actually moved the meter — never from the text writers,
+  /// which also run on resyncs and bet changes that must not flash.
+  /// </summary>
+  internal void PlayMeterEffect(int coinSymbolId)
+  {
+    var ui = FindPig(coinSymbolId);
+    if (ui == null) return;
+    PlayOneShotPair(ui.meterEffect, ui.meterEffectPortrait, meterEffectSpeed);
+  }
+
+  /// <summary>Play the star shine on one jackpot tier, both orientations.</summary>
+  internal void PlayJackpotShine(string tier)
+  {
+    var ui = FindTier(tier);
+    if (ui == null) return;
+    PlayOneShotPair(ui.shineEffect, ui.shineEffectPortrait, jackpotShineSpeed);
+  }
+
+  private void PlayOneShotPair(ImageAnimation landscape, ImageAnimation portrait, float speed)
+  {
+    var key = landscape != null ? landscape : portrait;
+    if (key == null) return;
+
+    // A second coin on the same meter restarts the effect rather than letting the first
+    // routine switch it off halfway through the second.
+    if (effectRoutines.TryGetValue(key, out var running) && running != null)
+      StopCoroutine(running);
+
+    effectRoutines[key] = StartCoroutine(OneShotPairRoutine(key, landscape, portrait, speed));
+  }
+
+  private IEnumerator OneShotPairRoutine(ImageAnimation key, ImageAnimation landscape,
+                                         ImageAnimation portrait, float speed)
+  {
+    bool landscapeDone = !StartOneShot(landscape, speed);
+    bool portraitDone = !StartOneShot(portrait, speed);
+
+    if (landscape != null) landscape.onLoopComplete = _ => landscapeDone = true;
+    if (portrait != null) portrait.onLoopComplete = _ => portraitDone = true;
+
+    // Deadline for the same reason as HoleFillRoutine: the off-screen orientation's parent is
+    // usually inactive, and ImageAnimation never reports completion there.
+    float longest = Mathf.Max(landscape != null ? landscape.GetSequenceDuration() : 0f,
+                              portrait != null ? portrait.GetSequenceDuration() : 0f);
+    float deadline = Time.time + longest + 0.25f;
+    while ((!landscapeDone || !portraitDone) && Time.time < deadline) yield return null;
+
+    EndOneShot(landscape);
+    EndOneShot(portrait);
+    effectRoutines.Remove(key);
+  }
+
+  private static bool StartOneShot(ImageAnimation animation, float speed)
+  {
+    if (animation == null) return false;
+    SetActiveSafe(animation.gameObject, true);
+    return CoinAnimator.PlayOnce(animation, speed, null);
+  }
+
+  private static void EndOneShot(ImageAnimation animation)
+  {
+    if (animation == null) return;
+    CoinAnimator.Stop(animation);
+    SetActiveSafe(animation.gameObject, false);
+  }
+
+  /// <summary>Switch every meter / shine effect off, so none shows its first frame at load.</summary>
+  private void HideAllEffects()
+  {
+    foreach (var ui in pigs)
+    {
+      if (ui == null) continue;
+      EndOneShot(ui.meterEffect);
+      EndOneShot(ui.meterEffectPortrait);
+    }
+
+    foreach (var ui in jackpotTiers)
+    {
+      if (ui == null) continue;
+      EndOneShot(ui.shineEffect);
+      EndOneShot(ui.shineEffectPortrait);
+    }
+  }
+
+  #endregion
 
   #region Free-spin trigger presentation
 
@@ -627,6 +799,449 @@ public class PigMeterController : MonoBehaviour
   {
     if (coin == null) return;
     CoinAnimator.Stop(coin.GetComponent<ImageAnimation>());
+  }
+
+  #endregion
+
+  #region Yellow jackpot collection
+
+  /// <summary>
+  /// Boot state: every panel hidden, every hole empty. The panels ship inactive in the scene;
+  /// a CanvasGroup is added where missing so a panel fades as a whole — its static text and
+  /// holes included — rather than just its own Image.
+  /// </summary>
+  private void InitJackpotPanels()
+  {
+    foreach (var ui in jackpotTiers)
+    {
+      if (ui == null) continue;
+
+      EnsureCanvasGroup(ui.panel);
+      EnsureCanvasGroup(ui.panelPortrait);
+      SetPanelVisible(ui.panel, false);
+      SetPanelVisible(ui.panelPortrait, false);
+
+      int landscape = ui.holes != null ? ui.holes.Count : 0;
+      int portrait = ui.holesPortrait != null ? ui.holesPortrait.Count : 0;
+      if (landscape != portrait)
+        Debug.LogError($"[PigMeters] Jackpot tier \"{ui.tier}\" has {landscape} landscape hole(s) " +
+                       $"but {portrait} portrait hole(s). Both lists must match, in the same order.", this);
+    }
+
+    ResetAllHoles();
+    jackpotPanelsShown = false;
+  }
+
+  /// <summary>
+  /// The server decides when a tier pays; the UI can only show as many hits as it has holes.
+  /// A mismatch means a tier either pays before it looks full or looks full and keeps going.
+  /// </summary>
+  private void ValidateHoleCounts(Dictionary<string, int> jackpotLevels)
+  {
+    if (jackpotLevels == null) return;
+
+    foreach (var kv in jackpotLevels)
+    {
+      var ui = FindTier(kv.Key);
+      if (ui == null) continue;
+
+      int holes = ui.holes != null ? ui.holes.Count : 0;
+      if (holes != kv.Value)
+        Debug.LogWarning($"[PigMeters] Server says jackpot \"{kv.Key}\" fills at {kv.Value} " +
+                         $"space(s) but the UI has {holes} hole(s). Hits past the last hole " +
+                         "will not be shown; check the backend's yellowPig.jackpotLevels.", this);
+    }
+  }
+
+  /// <summary>
+  /// Fade all six panels in, both orientations together, with every hole empty. Called as the
+  /// Yellow intro popup opens. Idempotent.
+  /// </summary>
+  internal void ShowJackpotPanels()
+  {
+    if (jackpotPanelsShown) return;
+    jackpotPanelsShown = true;
+
+    KillJackpotTweens();
+    ResetAllHoles();
+
+    foreach (var ui in jackpotTiers)
+    {
+      if (ui == null) continue;
+      FadePanelIn(ui.panel);
+      FadePanelIn(ui.panelPortrait);
+    }
+  }
+
+  internal bool JackpotPanelsShown => jackpotPanelsShown;
+
+  /// <summary>
+  /// Fade every panel out together, then switch them off and empty their holes. Called as the
+  /// congratulations panel opens; <paramref name="instant"/> for a cancelled round.
+  /// </summary>
+  internal void HideJackpotPanels(bool instant)
+  {
+    pendingAwardedTiers.Clear();
+    pendingCollections = null;
+
+    if (!jackpotPanelsShown && !instant) return;
+    jackpotPanelsShown = false;
+
+    KillJackpotTweens();
+
+    foreach (var ui in jackpotTiers)
+    {
+      if (ui == null) continue;
+
+      if (instant)
+      {
+        SetPanelVisible(ui.panel, false);
+        SetPanelVisible(ui.panelPortrait, false);
+      }
+      else
+      {
+        FadePanelOut(ui.panel);
+        FadePanelOut(ui.panelPortrait);
+      }
+    }
+
+    // Holes are reset at once when instant; otherwise they go with the panel, after its fade,
+    // so the gold does not visibly drop out of a panel that is still on screen.
+    if (instant) ResetAllHoles();
+    else jackpotTweens.Add(DOVirtual.DelayedCall(panelFadeOutDuration, ResetAllHoles));
+  }
+
+  /// <summary>
+  /// Claim the next hole of <paramref name="tier"/> for a coin about to fly. Reserved at launch
+  /// rather than on landing, so coins still in the air fill their holes in launch order.
+  /// Returns -1 when the tier has no free hole.
+  /// </summary>
+  internal int ReserveHole(string tier)
+  {
+    var ui = FindTier(tier);
+    if (ui == null)
+    {
+      Debug.LogError($"[PigMeters] No UI wired for jackpot tier \"{tier}\" — its coin has " +
+                     "nowhere to go. Check the jackpotTiers list (keys are case-sensitive).", this);
+      return -1;
+    }
+
+    int filled = FilledHoles(tier);
+    int capacity = ui.holes != null ? ui.holes.Count : 0;
+    if (filled >= capacity)
+    {
+      Debug.LogWarning($"[PigMeters] Jackpot \"{tier}\" is already showing all {capacity} " +
+                       "hole(s) filled; this coin will fly but fill nothing.", this);
+      return -1;
+    }
+
+    filledHoles[tier] = filled + 1;
+    return filled;
+  }
+
+  /// <summary>Blast then gold fill on one hole, both orientations together. Fire-and-forget.</summary>
+  internal void PlayHoleFill(string tier, int index)
+  {
+    var ui = FindTier(tier);
+    if (ui == null || index < 0) return;
+
+    holeRoutines.Add(StartCoroutine(HoleFillRoutine(HoleAt(ui.holes, index),
+                                                     HoleAt(ui.holesPortrait, index))));
+  }
+
+  private IEnumerator HoleFillRoutine(JackpotHoleUI landscape, JackpotHoleUI portrait)
+  {
+    bool landscapeDone = !StartBlast(landscape);
+    bool portraitDone = !StartBlast(portrait);
+
+    if (landscape?.blast != null) landscape.blast.onLoopComplete = _ => landscapeDone = true;
+    if (portrait?.blast != null) portrait.blast.onLoopComplete = _ => portraitDone = true;
+
+    // Backed by the sequence's own length: the off-screen orientation is usually inactive, and
+    // ImageAnimation silently drops its completion callback there.
+    float longest = Mathf.Max(BlastDuration(landscape), BlastDuration(portrait));
+    float deadline = Time.time + longest + 0.25f;
+    while ((!landscapeDone || !portraitDone) && Time.time < deadline) yield return null;
+
+    EndBlast(landscape);
+    EndBlast(portrait);
+
+    FadeFill(landscape, 1f, fillFadeInDuration);
+    FadeFill(portrait, 1f, fillFadeInDuration);
+  }
+
+  private bool StartBlast(JackpotHoleUI hole) => StartOneShot(hole?.blast, blastAnimationSpeed);
+
+  private static void EndBlast(JackpotHoleUI hole) => EndOneShot(hole?.blast);
+
+  private float BlastDuration(JackpotHoleUI hole)
+  {
+    if (hole?.blast == null) return 0f;
+    return hole.blast.GetSequenceDuration();
+  }
+
+  /// <summary>
+  /// Latch this spin's jackpot awards and the server's collection counts, the moment the
+  /// result arrives. Consumed by <see cref="ClearAwardedJackpots"/> after the win popup.
+  /// </summary>
+  internal void SetPendingJackpotAwards(List<ServerJackpotWin> jackpotWins,
+                                        Dictionary<string, int> collections)
+  {
+    pendingAwardedTiers.Clear();
+    pendingCollections = collections;
+
+    if (jackpotWins == null) return;
+
+    foreach (var win in jackpotWins)
+    {
+      if (win == null) continue;
+
+      string tier = RichPiggiesSymbols.JackpotTierName(win.symbolId) ?? win.symbolName;
+      if (string.IsNullOrEmpty(tier) || FindTier(tier) == null)
+      {
+        Debug.LogError($"[PigMeters] jackpotWin names an unknown tier (id {win.symbolId}, " +
+                       $"name \"{win.symbolName}\"). Its holes cannot be cleared.", this);
+        continue;
+      }
+
+      if (!pendingAwardedTiers.Contains(tier)) pendingAwardedTiers.Add(tier);
+    }
+  }
+
+  internal bool HasAwardedJackpotsToClear => pendingAwardedTiers.Count > 0 && jackpotPanelsShown;
+
+  /// <summary>
+  /// The no-award path of <see cref="ClearAwardedJackpots"/>: nothing to clear, just check the
+  /// holes against the server's counts.
+  /// </summary>
+  internal void SyncPendingJackpotCollections()
+  {
+    var collections = pendingCollections;
+    pendingCollections = null;
+    pendingAwardedTiers.Clear();
+
+    if (jackpotPanelsShown) CheckCollections(collections, null);
+  }
+
+  /// <summary>Tiers this spin paid, for SlotView to top up before the popup.</summary>
+  internal IReadOnlyList<string> PendingAwardedTiers => pendingAwardedTiers;
+
+  /// <summary>
+  /// Fill every remaining hole of a tier that paid this spin. Only needed when the client's
+  /// count had drifted — normally the coins have already filled it.
+  /// </summary>
+  internal void ForceFillTier(string tier)
+  {
+    var ui = FindTier(tier);
+    if (ui == null || ui.holes == null) return;
+
+    int filled = FilledHoles(tier);
+    if (filled >= ui.holes.Count) return;
+
+    Debug.LogWarning($"[PigMeters] Jackpot \"{tier}\" paid with only {filled}/{ui.holes.Count} " +
+                     "hole(s) shown filled. Filling the rest so the award reads correctly.", this);
+
+    for (int i = filled; i < ui.holes.Count; i++)
+    {
+      FadeFill(HoleAt(ui.holes, i), 1f, fillFadeInDuration);
+      FadeFill(HoleAt(ui.holesPortrait, i), 1f, fillFadeInDuration);
+    }
+
+    filledHoles[tier] = ui.holes.Count;
+  }
+
+  /// <summary>
+  /// After the win popup: fade out every gold fill of each tier that paid, together, and
+  /// start that tier again from empty. A no-op on a normal spin.
+  /// </summary>
+  internal IEnumerator ClearAwardedJackpots()
+  {
+    var collections = pendingCollections;
+    pendingCollections = null;
+
+    var awarded = new List<string>(pendingAwardedTiers);
+    pendingAwardedTiers.Clear();
+
+    if (awarded.Count > 0 && jackpotPanelsShown)
+    {
+      foreach (string tier in awarded)
+      {
+        var ui = FindTier(tier);
+        if (ui == null) continue;
+
+        FadeAllFills(ui.holes, 0f, fillFadeOutDuration);
+        FadeAllFills(ui.holesPortrait, 0f, fillFadeOutDuration);
+        filledHoles[tier] = 0;
+      }
+
+      yield return new WaitForSeconds(fillFadeOutDuration);
+    }
+
+    if (jackpotPanelsShown) CheckCollections(collections, awarded);
+  }
+
+  /// <summary>
+  /// Compare the holes on screen with the server's yellowFSCollections and report any
+  /// disagreement. Deliberately does NOT move the fills: the holes follow the coins the player
+  /// watched land (one coin, one hole; an award empties the tier), and snapping them to a
+  /// server count that disagrees would refill a tier that just paid, or show a hit that never
+  /// flew. A tier paid this spin is expected to read 0.
+  /// </summary>
+  private void CheckCollections(Dictionary<string, int> collections, List<string> awarded)
+  {
+    if (collections == null) return;
+
+    foreach (var ui in jackpotTiers)
+    {
+      if (ui == null || string.IsNullOrEmpty(ui.tier)) continue;
+      if (!collections.TryGetValue(ui.tier, out int server)) continue;
+
+      int shown = FilledHoles(ui.tier);
+      if (shown == server) continue;
+
+      bool justPaid = awarded != null && awarded.Contains(ui.tier);
+      Debug.LogWarning($"[PigMeters] Jackpot \"{ui.tier}\" shows {shown} hole(s) filled but " +
+                       $"yellowFSCollections says {server}" +
+                       (justPaid ? " on the spin it paid — the server should have reset it to 0." : ".") +
+                       " Keeping the client count; check the backend.", this);
+    }
+  }
+
+  private int FilledHoles(string tier) =>
+      filledHoles.TryGetValue(tier, out int filled) ? filled : 0;
+
+  private void ResetAllHoles()
+  {
+    filledHoles.Clear();
+
+    foreach (var ui in jackpotTiers)
+    {
+      if (ui == null) continue;
+      ResetHoles(ui.holes);
+      ResetHoles(ui.holesPortrait);
+    }
+  }
+
+  private static void ResetHoles(List<JackpotHoleUI> holes)
+  {
+    if (holes == null) return;
+
+    foreach (var hole in holes)
+    {
+      if (hole == null) continue;
+
+      EndBlast(hole);
+
+      if (hole.fill != null)
+      {
+        hole.fill.DOKill();
+        SetGraphicAlpha(hole.fill, 0f);
+        SetActiveSafe(hole.fill.gameObject, false);
+      }
+    }
+  }
+
+  private void FadeAllFills(List<JackpotHoleUI> holes, float alpha, float duration)
+  {
+    if (holes == null) return;
+    foreach (var hole in holes) FadeFill(hole, alpha, duration);
+  }
+
+  /// <summary>Fade a fill to <paramref name="alpha"/>; switched off once it reaches 0.</summary>
+  private void FadeFill(JackpotHoleUI hole, float alpha, float duration)
+  {
+    var fill = hole?.fill;
+    if (fill == null) return;
+
+    fill.DOKill();
+
+    if (alpha > 0f)
+    {
+      if (!fill.gameObject.activeSelf)
+      {
+        SetGraphicAlpha(fill, 0f);
+        fill.gameObject.SetActive(true);
+      }
+
+      jackpotTweens.Add(fill.DOFade(alpha, duration).SetEase(Ease.OutQuad));
+    }
+    else
+    {
+      if (!fill.gameObject.activeSelf) return;
+
+      jackpotTweens.Add(fill.DOFade(0f, duration).SetEase(Ease.InQuad)
+                            .OnComplete(() => SetActiveSafe(fill.gameObject, false)));
+    }
+  }
+
+  private static JackpotHoleUI HoleAt(List<JackpotHoleUI> holes, int index) =>
+      holes != null && index >= 0 && index < holes.Count ? holes[index] : null;
+
+  private static void EnsureCanvasGroup(GameObject panel)
+  {
+    if (panel != null && panel.GetComponent<CanvasGroup>() == null)
+      panel.AddComponent<CanvasGroup>();
+  }
+
+  private static void SetPanelVisible(GameObject panel, bool visible)
+  {
+    if (panel == null) return;
+
+    var group = panel.GetComponent<CanvasGroup>();
+    if (group != null)
+    {
+      group.DOKill();
+      group.alpha = visible ? 1f : 0f;
+    }
+
+    SetActiveSafe(panel, visible);
+  }
+
+  private void FadePanelIn(GameObject panel)
+  {
+    if (panel == null) return;
+
+    var group = panel.GetComponent<CanvasGroup>();
+    SetActiveSafe(panel, true);
+    if (group == null) return;
+
+    group.DOKill();
+    group.alpha = 0f;
+    jackpotTweens.Add(group.DOFade(1f, panelFadeInDuration).SetEase(Ease.OutQuad));
+  }
+
+  private void FadePanelOut(GameObject panel)
+  {
+    if (panel == null || !panel.activeSelf) return;
+
+    var group = panel.GetComponent<CanvasGroup>();
+    if (group == null)
+    {
+      SetActiveSafe(panel, false);
+      return;
+    }
+
+    group.DOKill();
+    jackpotTweens.Add(group.DOFade(0f, panelFadeOutDuration).SetEase(Ease.InQuad)
+                           .OnComplete(() => SetActiveSafe(panel, false)));
+  }
+
+  private static void SetGraphicAlpha(Graphic graphic, float alpha)
+  {
+    var color = graphic.color;
+    color.a = alpha;
+    graphic.color = color;
+  }
+
+  private void KillJackpotTweens()
+  {
+    // A blast still playing would otherwise fade its fill back in over a panel just reset.
+    foreach (var routine in holeRoutines)
+      if (routine != null) StopCoroutine(routine);
+    holeRoutines.Clear();
+
+    foreach (var tween in jackpotTweens) tween?.Kill();
+    jackpotTweens.Clear();
   }
 
   #endregion

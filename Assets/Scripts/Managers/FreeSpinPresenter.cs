@@ -494,6 +494,10 @@ internal class FreeSpinPresenter : MonoBehaviour
     // Whether it ran to the end or was cut, everything this block put on screen comes down
     // through the one path.
     ResetIntroPopups();
+
+    // Stop can skip the yellow popup, but a Yellow round still needs its jackpot panels.
+    if (PigFeatures.Has(round.contributors, PigFeature.Yellow))
+      pigMeters?.ShowJackpotPanels();
   }
 
   /// <summary>Yellow first, then Blue, then Red — the order the reference game uses.</summary>
@@ -502,8 +506,8 @@ internal class FreeSpinPresenter : MonoBehaviour
 
   private IEnumerator PlayYellowPopup()
   {
-    // Deliberately plain. Yellow's in-round jackpot collection UI is a separate feature and
-    // is not wired here yet.
+    // The six jackpot panels fade in together as the popup announcing them opens.
+    pigMeters?.ShowJackpotPanels();
     yield return StartCoroutine(ScalePopup(yellowPopup, yellowPopupRect, yellowHoldDuration));
   }
 
@@ -652,6 +656,9 @@ internal class FreeSpinPresenter : MonoBehaviour
     // The pigs go back to normal UNDER the congratulations panel, so the reset is not
     // something the player watches happen on an otherwise idle screen.
     pigMeters?.ExitFreeSpins();
+
+    // The jackpot panels leave together as the congratulations panel arrives.
+    pigMeters?.HideJackpotPanels(instant: false);
 
     yield return StartCoroutine(ShowCongratulations(round));
 
@@ -818,6 +825,7 @@ internal class FreeSpinPresenter : MonoBehaviour
 
     // A cancelled round leaves the pigs mid-presentation: glowing, darkened, Spine frozen.
     pigMeters?.ExitFreeSpins();
+    pigMeters?.HideJackpotPanels(instant: true);
 
     IsActive = false;
     IsIntroBlocking = false;

@@ -221,6 +221,19 @@ public class SlotView : MonoBehaviour
   private readonly List<Coroutine> coinRoutines = new List<Coroutine>();
   private readonly List<GameObject> spawnedJackpotCoins = new List<GameObject>();
 
+  // Jackpot coins (coinOverlays ids 15-20) during Yellow free spins, in server order. Each is
+  // stamped on its cell with the result and flies straight to its jackpot panel to fill a
+  // hole. Drained after the pig coin flights.
+  private struct JackpotHit
+  {
+    internal int row;
+    internal int col;
+    internal string tier;
+    internal SlotSymbolView cell;   // null when the coin could not be stamped
+  }
+
+  private readonly List<JackpotHit> pendingJackpotHits = new List<JackpotHit>();
+
   private bool isSpinning;
 
   /// <summary>Column count, taken from the wired result grid (falls back to config, then 5).</summary>
@@ -771,6 +784,7 @@ public class SlotView : MonoBehaviour
   {
     yield return StartCoroutine(PlayMysteryReveal());
     yield return StartCoroutine(PlayCoinFlights());
+    yield return StartCoroutine(PlayJackpotCollections());
   }
 
   #endregion
@@ -910,9 +924,15 @@ public class SlotView : MonoBehaviour
   internal void ShowCoinOverlays(List<ServerCoinOverlay> coinOverlays, ServerMeters meters)
   {
     ClearCoinOverlays();
+    ClearJackpotHits();
     pendingMeters = meters;
 
     if (coinOverlays == null || coinOverlays.Count == 0) return;
+
+    // Jackpot coins (15-20, Yellow free spins) fly straight to their jackpot panel and never
+    // touch a pig or a meter diff, so they are split off before the pig coin plans are built.
+    coinOverlays = StampJackpotCoins(coinOverlays);
+    if (coinOverlays.Count == 0) return;
 
     if (pigMeters == null)
     {
@@ -1043,6 +1063,9 @@ public class SlotView : MonoBehaviour
           {
             if (coinId == RichPiggiesSymbols.BlueCoin) pigMeters.SetBlueText(plan.meterValueAfter);
             else if (coinId == RichPiggiesSymbols.RedCoin) pigMeters.SetRedText(plan.meterValueAfter);
+
+            if (coinId == RichPiggiesSymbols.BlueCoin || coinId == RichPiggiesSymbols.RedCoin)
+              pigMeters.PlayMeterEffect(coinId);
           }
         },
         onArrive: null));
@@ -1073,6 +1096,7 @@ public class SlotView : MonoBehaviour
       // The flight could not be staged, but the meter still moved on the server — show it
       // rather than silently holding the old number.
       pigMeters.SetJackpotText(award.tier, award.valueAfter);
+      pigMeters.PlayJackpotShine(award.tier);
       yield break;
     }
 
@@ -1093,6 +1117,7 @@ public class SlotView : MonoBehaviour
         {
           pigMeters.StopJackpotCoinAnimation(coin);
           pigMeters.SetJackpotText(tier, valueAfter);
+          pigMeters.PlayJackpotShine(tier);
         },
         onArrive: null));
 
@@ -1148,6 +1173,167 @@ public class SlotView : MonoBehaviour
     spawnedJackpotCoins.Clear();
     ClearCoinOverlays();
     pendingMeters = null;
+    ClearJackpotHits();
+  }
+
+  #endregion
+
+  #region Yellow jackpot collection
+
+  /// <summary>
+  /// Split the jackpot coins (ids 15-20, Yellow free spins) out of this spin's coinOverlays,
+  /// stamp each one on its cell's coin child and queue its flight. Returns the remaining pig
+  /// coins for the normal plan builder.
+  ///
+  /// Stamped the moment the result arrives, like the pig coins: the coin child sits below the
+  /// locker, so a jackpot coin on a Mystery cell appears as part of the reveal.
+  /// </summary>
+  private List<ServerCoinOverlay> StampJackpotCoins(List<ServerCoinOverlay> coinOverlays)
+  {
+    var pigCoins = new List<ServerCoinOverlay>(coinOverlays.Count);
+
+    foreach (var overlay in coinOverlays)
+    {
+      string tier = overlay != null ? JackpotTierOf(overlay) : null;
+      if (tier == null)
+      {
+        pigCoins.Add(overlay);
+        continue;
+      }
+
+      if (overlay.position == null || overlay.position.Count < 2)
+      {
+        Debug.LogError($"[SlotView] Jackpot coin \"{tier}\" has no usable [row, col] position.", this);
+        continue;
+      }
+
+      int row = overlay.position[0];
+      int col = overlay.position[1];
+      var cell = (col >= 0 && col < ReelCount && row >= 0 && row < RowCount) ? ResultCell(col, row) : null;
+
+      if (pigMeters == null || cell == null || !cell.ShowCoin(pigMeters.JackpotCoinFrames(tier)))
+      {
+        Debug.LogError($"[SlotView] Jackpot coin \"{tier}\" at row {row}, col {col} could not be " +
+                       "shown on its cell (pigMeters, resultCells or the SlotIcon coin child is " +
+                       "missing). Its hole will still fill.", this);
+        pendingJackpotHits.Add(new JackpotHit { row = row, col = col, tier = tier, cell = null });
+        continue;
+      }
+
+      pendingJackpotHits.Add(new JackpotHit { row = row, col = col, tier = tier, cell = cell });
+    }
+
+    return pigCoins;
+  }
+
+  /// <summary>Tier key for a jackpot coin overlay, or null for a pig coin.</summary>
+  private static string JackpotTierOf(ServerCoinOverlay overlay)
+  {
+    string tier = RichPiggiesSymbols.JackpotTierName(overlay.coinId);
+    if (tier != null) return tier;
+
+    // coinId is authoritative; fall back to the name ("Grand" / "GrandCoin") only if the
+    // server ever omits it.
+    if (string.IsNullOrEmpty(overlay.coin)) return null;
+    string name = overlay.coin.EndsWith("Coin", System.StringComparison.OrdinalIgnoreCase)
+        ? overlay.coin.Substring(0, overlay.coin.Length - 4) : overlay.coin;
+
+    foreach (int id in RichPiggiesSymbols.JackpotSymbolIds)
+    {
+      string candidate = RichPiggiesSymbols.JackpotTierName(id);
+      if (string.Equals(candidate, name, System.StringComparison.OrdinalIgnoreCase)) return candidate;
+    }
+
+    return null;
+  }
+
+  /// <summary>
+  /// Fly every stamped jackpot coin straight to its jackpot panel, filling the next hole on
+  /// touchdown. Staggered and overlapping like the pig coins; returns once the last one has
+  /// landed. Any tier the server paid this spin is then topped up to full, so the win popup
+  /// that follows always sits over a completed meter.
+  /// </summary>
+  private IEnumerator PlayJackpotCollections()
+  {
+    if (pendingJackpotHits.Count > 0 && pigMeters != null && coinFlightLayer != null)
+    {
+      int running = 0;
+
+      for (int i = 0; i < pendingJackpotHits.Count; i++)
+      {
+        var hit = pendingJackpotHits[i];
+
+        running++;
+        coinRoutines.Add(StartCoroutine(RunJackpotHit(hit, () => running--)));
+
+        if (i < pendingJackpotHits.Count - 1 && coinLaunchStagger > 0f)
+          yield return new WaitForSeconds(coinLaunchStagger);
+      }
+
+      while (running > 0) yield return null;
+    }
+    else if (pendingJackpotHits.Count > 0)
+    {
+      Debug.LogError("[SlotView] Jackpot coins landed but pigMeters or coinFlightLayer is " +
+                     "unassigned, so none can fly.", this);
+    }
+
+    ClearJackpotHits();
+
+    if (pigMeters != null)
+      foreach (string tier in pigMeters.PendingAwardedTiers)
+        pigMeters.ForceFillTier(tier);
+  }
+
+  /// <summary>
+  /// One jackpot coin: lift it off its cell, fly it to its tier's panel, blast + fill a hole
+  /// on touchdown, send it home hidden.
+  /// </summary>
+  private IEnumerator RunJackpotHit(JackpotHit hit, System.Action onDone)
+  {
+    string tier = hit.tier;
+
+    // Reserved before launch so overlapping flights fill holes in launch order.
+    int holeIndex = pigMeters.ReserveHole(tier);
+
+    var cell = hit.cell;
+    if (cell == null || cell.CoinRect == null)
+    {
+      // Nothing to fly, but the hit still counts on the server — show it.
+      pigMeters.PlayHoleFill(tier, holeIndex);
+      onDone?.Invoke();
+      yield break;
+    }
+
+    var frames = pigMeters.JackpotCoinFrames(tier);
+
+    cell.DetachCoin(coinFlightLayer);
+    cell.StartCoinAnimation(frames, pigMeters.CoinAnimationSpeed);
+
+    yield return StartCoroutine(CoinFlyer.Fly(
+        cell.CoinRect,
+        () => pigMeters.JackpotTarget(tier),
+        FlightDurationFor(cell.CoinRect, pigMeters.JackpotTarget(tier)),
+        coinFlightEase, coinShrinkDuration, coinShrinkEase,
+        onTouchdown: () =>
+        {
+          cell.StopCoinAnimation();
+          pigMeters.PlayHoleFill(tier, holeIndex);
+        },
+        onArrive: null));
+
+    cell.ReturnCoinHome();
+
+    onDone?.Invoke();
+  }
+
+  /// <summary>Send every stamped jackpot coin home hidden and forget them. Idempotent.</summary>
+  private void ClearJackpotHits()
+  {
+    foreach (var hit in pendingJackpotHits)
+      if (hit.cell != null) hit.cell.ReturnCoinHome();
+
+    pendingJackpotHits.Clear();
   }
 
   #endregion
@@ -1178,6 +1364,37 @@ public class SlotView : MonoBehaviour
 
     KillWinTweens();
     winAnimationCoroutine = StartCoroutine(PlayWinPresentation(winLines, onComplete));
+  }
+
+  /// <summary>
+  /// A win with no paylines behind it — a jackpot award, the trigger's 1x stake — still gets
+  /// the tiered win popup. Same gate ordering as <see cref="PlayWinPresentation"/>: Show()
+  /// raises isSpecialWinActive before onComplete lets the game loop check it.
+  /// </summary>
+  internal void ShowWinPopupOnly(double winAmount, System.Action onComplete)
+  {
+    KillWinTweens();
+    winAnimationCoroutine = StartCoroutine(PlayWinPopupOnly(winAmount, onComplete));
+  }
+
+  private IEnumerator PlayWinPopupOnly(double winAmount, System.Action onComplete)
+  {
+    if (winPresentationDelay > 0f)
+      yield return new WaitForSeconds(winPresentationDelay);
+
+    double totalPay = gameManager != null ? gameManager.GetTotalPay() : 0;
+
+    if (winPopup != null && winPopup.ShouldShow(winAmount, totalPay))
+      winPopup.Show(winAmount, totalPay, null);
+    else if (winPopup == null && !warnedNoWinPopup)
+    {
+      warnedNoWinPopup = true;
+      Debug.LogError("[SlotView] This round won but no win popup played: the 'Win Popup' " +
+                     "field on SlotView is unassigned.", this);
+    }
+
+    winAnimationCoroutine = null;
+    onComplete?.Invoke();
   }
 
   private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action onComplete)

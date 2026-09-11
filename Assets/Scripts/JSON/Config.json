@@ -614,7 +614,7 @@
         "Minor": 2
       },
       "freeSpinsCount": 7,
-      "triggerProbability": 0.5,
+      "triggerProbability": 0.9,
       "coinAddsBetMultiplier": {
         "max": 100,
         "min": 10

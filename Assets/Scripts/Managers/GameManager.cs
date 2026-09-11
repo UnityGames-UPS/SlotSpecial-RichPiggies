@@ -270,6 +270,12 @@ public class GameManager : MonoBehaviour
       // client works out which coin moved which meter by diffing them.
       slotView.ShowCoinOverlays(lastResult.coinOverlays, lastResult.meters);
 
+      // Yellow free spins: jackpot coins ride in coinOverlays too (stamped above) and fly
+      // straight to their panel. Awards are latched now and their holes cleared after this
+      // spin's win popup.
+      if (pigMeters != null)
+        pigMeters.SetPendingJackpotAwards(lastResult.jackpotWins, lastResult.yellowFSCollections);
+
       LatchFreeSpinTrigger();
     }
 
@@ -373,6 +379,11 @@ public class GameManager : MonoBehaviour
     {
       slotView.ShowWinLineAnimation(lastResult.winLines, OnWinAnimationComplete);
     }
+    else if (lastResult != null && lastResult.winAmount > 0 && slotView != null)
+    {
+      // No lines but still a win (a jackpot award, the trigger's 1x stake): popup only.
+      slotView.ShowWinPopupOnly(lastResult.winAmount, OnWinAnimationComplete);
+    }
     else
     {
       OnWinAnimationComplete();
@@ -397,6 +408,18 @@ public class GameManager : MonoBehaviour
     // OnWinPopupClosed, which has already done it — and harmless, because the method is
     // idempotent and no-ops while any special win is still flagged.
     uiManager.EnableControlsAfterWinAnimation();
+
+    // A jackpot paid this spin: its popup has closed, so its holes empty now, before the next
+    // free spin. A no-op on every other spin.
+    // Yielded only when there is something to clear — the controls are live again, and an extra
+    // frame here on an ordinary spin would let a spin press settle this round underneath us.
+    if (pigMeters != null)
+    {
+      if (pigMeters.HasAwardedJackpotsToClear)
+        yield return StartCoroutine(pigMeters.ClearAwardedJackpots());
+      else
+        pigMeters.SyncPendingJackpotCollections();
+    }
 
     // The free-spin trigger presentation lands here, after the coin flights and the whole win
     // presentation have played. It does NOT fall through to ResumeAfterSpecialFeature: the
