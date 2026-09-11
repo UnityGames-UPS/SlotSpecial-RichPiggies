@@ -1,0 +1,16 @@
+name: Trigger S3 Upload
+
+on:
+  push:
+    branches:
+      - dev-build
+  workflow_dispatch:    
+
+jobs:
+  call-reusable:
+    uses: UnityGames-UPS/unity-build-pipeline/.github/workflows/main.yml@main
+    with:
+      s3_bucket: unity.build-dev
+      s3_folder: SL-RP
+      cloudfront_distribution_id: ERDVMYSDM278F
+      invalidate_paths: "/SL-RP/*"
