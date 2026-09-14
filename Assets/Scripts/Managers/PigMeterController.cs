@@ -580,8 +580,8 @@ public class PigMeterController : MonoBehaviour
   /// pig unfrozen and idling. Idempotent, so the outro and an interrupted round can both
   /// call it.
   ///
-  /// The METERS need nothing here — the last free spin's ResyncTo has already taken the
-  /// server's post-reset values.
+  /// The METERS need nothing here — the last free spin's post-reset values are applied by
+  /// FreeSpinPresenter when the congratulations popup opens.
   /// </summary>
   internal void ExitFreeSpins()
   {

@@ -183,6 +183,9 @@ internal class FreeSpinPresenter : MonoBehaviour
   internal bool IsActive { get; private set; }
 
   private Coroutine sequence;
+
+  // The round the outro is closing, so a cancelled outro can still apply its reset meters.
+  private FreeSpinRound outroRound;
   private bool dismissRequested;
   private bool introStopRequested;
 
@@ -648,6 +651,7 @@ internal class FreeSpinPresenter : MonoBehaviour
     if (round == null) return;
 
     if (sequence != null) StopCoroutine(sequence);
+    outroRound = round;
     sequence = StartCoroutine(OutroRoutine(round));
   }
 
@@ -690,6 +694,7 @@ internal class FreeSpinPresenter : MonoBehaviour
     if (slotView != null) yield return StartCoroutine(slotView.FadeOutOverlay(overlayFadeDuration));
 
     sequence = null;
+    outroRound = null;
     IsActive = false;
     uiManager?.OnWinPopupClosed();
   }
@@ -701,6 +706,7 @@ internal class FreeSpinPresenter : MonoBehaviour
       Debug.LogError("[FreeSpins] The round finished but congratsPopup / congratsPopupRect is " +
                      "not assigned, so no total-win panel can be shown. Assign " +
                      "SlotObject/WinPanel/CongratulationsPopup in the Inspector.", this);
+      ApplyFinalMeters(round);
       yield break;
     }
 
@@ -718,6 +724,9 @@ internal class FreeSpinPresenter : MonoBehaviour
 
     SetActive(congratsPopup, true);
     AudioManager.Instance?.PlayCongratulations();
+
+    // The triggering pigs' meters drop back to their defaults as the panel opens.
+    ApplyFinalMeters(round);
 
     if (!congratsPopup.activeInHierarchy)
     {
@@ -744,6 +753,17 @@ internal class FreeSpinPresenter : MonoBehaviour
     CoinAnimator.Stop(congratsBgAnim);
     SetActive(congratsPopup, false);
     ShowWinPanel(false);
+  }
+
+  /// <summary>
+  /// Render the last free spin's meters — the server's post-round reset of whichever pigs
+  /// triggered the round. SlotView skipped the reel-stop resync on that spin so the reset
+  /// lands here instead. Idempotent.
+  /// </summary>
+  private void ApplyFinalMeters(FreeSpinRound round)
+  {
+    if (round?.finalMeters == null || pigMeters == null) return;
+    pigMeters.ResyncTo(round.finalMeters);
   }
 
   /// <summary>
@@ -840,6 +860,10 @@ internal class FreeSpinPresenter : MonoBehaviour
     // A cancelled round leaves the pigs mid-presentation: glowing, darkened, Spine frozen.
     pigMeters?.ExitFreeSpins();
     pigMeters?.HideJackpotPanels(instant: true);
+
+    // An outro cut short before its popup opened must not leave the pre-reset meters showing.
+    ApplyFinalMeters(outroRound);
+    outroRound = null;
 
     IsActive = false;
     IsIntroBlocking = false;

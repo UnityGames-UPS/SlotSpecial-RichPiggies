@@ -356,7 +356,9 @@ public class SlotSymbolView : MonoBehaviour
       return false;
     }
 
-    if (!string.IsNullOrEmpty(skinName))
+    // Only on a real change: the win loop re-stages every pass, and resetting slots each time
+    // would knock the held pose back to setup for a frame.
+    if (!string.IsNullOrEmpty(skinName) && spineGraphic.Skeleton.Skin?.Name != skinName)
     {
       spineGraphic.Skeleton.SetSkin(skinName);
       spineGraphic.Skeleton.SetSlotsToSetupPose();

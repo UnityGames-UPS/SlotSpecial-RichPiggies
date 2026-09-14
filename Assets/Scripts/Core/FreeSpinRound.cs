@@ -121,6 +121,13 @@ internal class FreeSpinRound
   internal int redWildCount;
 
   /// <summary>
+  /// The LAST free spin's meters. The server already resets the triggering pigs' meters on
+  /// that response, but the reset must not appear until the congratulations popup — so the
+  /// reel-stop resync skips that spin and the outro applies these instead.
+  /// </summary>
+  internal ServerMeters finalMeters;
+
+  /// <summary>
   /// Build a round from the spin that triggered it.
   ///
   /// <paramref name="meters"/> must be the TRIGGER spin's meters. Blue and Red are read here

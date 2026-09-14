@@ -41,6 +41,10 @@ public class AudioManager : MonoBehaviour
              "fade and reads as landing late, so this defaults to none.")]
     [SerializeField] private float reelStopFadeInDuration = 0f;
 
+    [Tooltip("Seconds into ReelStopAudio to start from. The file opens with ~0.21s of silence " +
+             "(hit peaks at ~0.29s), which is what made the stop sound late.")]
+    [SerializeField] private float reelStopStartOffset = 0.2f;
+
     [Tooltip("Fade-out of the reel-spinning loop once the last reel starts landing.")]
     [SerializeField] private float reelSpinFadeOutDuration = 0.12f;
 
@@ -183,12 +187,14 @@ public class AudioManager : MonoBehaviour
                       .SetUpdate(true);
     }
 
-    private void FadeIn(AudioSource source, AudioClip clip, float targetVolume, float duration)
+    private void FadeIn(AudioSource source, AudioClip clip, float targetVolume, float duration,
+                        float startTime = 0f)
     {
         DOTween.Kill(source);
         fadingOut.Remove(source);
         source.clip   = clip;
         source.volume = 0f;
+        source.time   = Mathf.Clamp(startTime, 0f, Mathf.Max(0f, clip.length - 0.01f));
         source.Play();
         FadeVolume(source, targetVolume, duration);
     }
@@ -241,7 +247,7 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     private AudioSource PlaySfx(AudioClip clip) => PlaySfx(clip, sfxFadeInDuration);
 
-    private AudioSource PlaySfx(AudioClip clip, float fadeInDuration)
+    private AudioSource PlaySfx(AudioClip clip, float fadeInDuration, float startTime = 0f)
     {
         if (!_sfxEnabled || clip == null || sfxPool.Count == 0) return null;
 
@@ -256,7 +262,7 @@ public class AudioManager : MonoBehaviour
         }
 
         sfxStartTimes[chosen] = Time.unscaledTime;
-        FadeIn(chosen, clip, SfxTargetVolume, fadeInDuration);
+        FadeIn(chosen, clip, SfxTargetVolume, fadeInDuration, startTime);
         return chosen;
     }
 
@@ -285,7 +291,7 @@ public class AudioManager : MonoBehaviour
     internal void PlayMeterAdd()                  => PlaySfx(clipMeterAdd);
     internal void PlayJackpotMultiplierIncrease() => PlaySfx(clipJackpotMultiplierIncrease);
     internal void PlayMysteryReveal()             => PlaySfx(clipMysteryReveal);
-    internal void PlayReelStop()                  => PlaySfx(clipReelStop, reelStopFadeInDuration);
+    internal void PlayReelStop()                  => PlaySfx(clipReelStop, reelStopFadeInDuration, reelStopStartOffset);
 
     /// <summary>NormalWin for the lowest tier, BigWins for every tier above it.</summary>
     internal void PlayWin(bool bigWin)

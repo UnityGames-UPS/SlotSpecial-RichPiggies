@@ -72,10 +72,9 @@ public class SlotView : MonoBehaviour
   [Tooltip("How long a stage holds when NONE of its symbols has an animation configured.")]
   [SerializeField] private float winSymbolLoopDuration = 1.5f;
 
-  [Tooltip("Delay between darkening the grid / lifting the winning cells and actually " +
-           "starting their animations. Keep at 0 unless you want a beat before the symbols " +
-           "move — staging already guarantees they all start on the same frame, and any " +
-           "value here shows as a dark gap between back-to-back stages.")]
+  [Tooltip("Delay before each pass's animations start. Keep at 0 unless you want a beat " +
+           "before the symbols move — staging already guarantees they all start on the same " +
+           "frame, and any value here holds the symbols on their last frame for longer.")]
   [SerializeField] private float winAnimationStartDelay = 0f;
 
   [Header("Win Presentation — stages")]
@@ -95,7 +94,8 @@ public class SlotView : MonoBehaviour
            "presentation settles into its idle loop.")]
   [SerializeField] private int phase2Repeats = 2;
 
-  [Tooltip("Pause between stages, and between repeats of the idle loop.")]
+  [Tooltip("Pause between stages, and between repeats of the idle loop. Winning symbols stay " +
+           "lit on their last frame through it.")]
   [SerializeField] private float phaseGapDelay = 1f;
 
   [Tooltip("Pause after each individual line in stage 2.")]
@@ -181,6 +181,10 @@ public class SlotView : MonoBehaviour
   private readonly List<Tween> winTweens = new List<Tween>();
   private Coroutine winAnimationCoroutine;
 
+  // Winning cells currently reparented onto winAnimationLayer. They stay there across passes
+  // and gaps; see ShowWinCells.
+  private readonly HashSet<SlotSymbolView> liftedWinCells = new HashSet<SlotSymbolView>();
+
   // True for the whole win presentation, so the darkening panel is raised once and stays up
   // across every stage. Individual stages must NOT own it: with the inter-stage delays at 0
   // the panel would switch off and back on within a frame or two of itself, which reads as
@@ -215,6 +219,11 @@ public class SlotView : MonoBehaviour
   private readonly List<SlotSymbolView> activeCoinCells = new List<SlotSymbolView>();
   private readonly List<CoinPlan> activeCoinPlans = new List<CoinPlan>();
   private ServerMeters pendingMeters;
+
+  // Set for the round-ending free spin: its meters are already the server's post-round reset,
+  // which FreeSpinPresenter applies when the congratulations popup opens. Coin landings still
+  // tick the texts; only the hard resync to pendingMeters is skipped.
+  private bool deferMeterResync;
 
   // In-flight coin chains and the jackpot coins they spawned, tracked so a spin interrupting
   // the beat can stop them and destroy the instances instead of leaking them onto the layer.
@@ -722,7 +731,7 @@ public class SlotView : MonoBehaviour
       // leave either covering the grid through the win presentation. The meters still take
       // the server's values, since those are true whether or not anything animated.
       ClearMysteryLockers();
-      if (pigMeters != null && pendingMeters != null) pigMeters.ResyncTo(pendingMeters);
+      if (pigMeters != null && pendingMeters != null && !deferMeterResync) pigMeters.ResyncTo(pendingMeters);
       StopCoinFlights();
       onComplete?.Invoke();
       yield break;
@@ -930,11 +939,13 @@ public class SlotView : MonoBehaviour
   /// BackendResponses.md section 4 shows does happen — is simply visible when the column
   /// parks.
   /// </summary>
-  internal void ShowCoinOverlays(List<ServerCoinOverlay> coinOverlays, ServerMeters meters)
+  internal void ShowCoinOverlays(List<ServerCoinOverlay> coinOverlays, ServerMeters meters,
+                                 bool deferMeterResync = false)
   {
     ClearCoinOverlays();
     ClearJackpotHits();
     pendingMeters = meters;
+    this.deferMeterResync = deferMeterResync;
 
     if (coinOverlays == null || coinOverlays.Count == 0) return;
 
@@ -1010,8 +1021,9 @@ public class SlotView : MonoBehaviour
     {
       // Even with no coins the server may have moved a meter (a feature resetting one, say).
       // Take its word for it rather than leaving the display on a stale value.
-      if (pigMeters != null && pendingMeters != null) pigMeters.ResyncTo(pendingMeters);
+      if (pigMeters != null && pendingMeters != null && !deferMeterResync) pigMeters.ResyncTo(pendingMeters);
       pendingMeters = null;
+      deferMeterResync = false;
       yield break;
     }
 
@@ -1034,10 +1046,11 @@ public class SlotView : MonoBehaviour
     while (running > 0) yield return null;
 
     // Hard resync: whatever the allocator guessed, the meters end on the server's values.
-    if (pigMeters != null && pendingMeters != null) pigMeters.ResyncTo(pendingMeters);
+    if (pigMeters != null && pendingMeters != null && !deferMeterResync) pigMeters.ResyncTo(pendingMeters);
 
     ClearCoinOverlays();
     pendingMeters = null;
+    deferMeterResync = false;
   }
 
   /// <summary>
@@ -1187,6 +1200,7 @@ public class SlotView : MonoBehaviour
     spawnedJackpotCoins.Clear();
     ClearCoinOverlays();
     pendingMeters = null;
+    deferMeterResync = false;
     ClearJackpotHits();
   }
 
@@ -1440,7 +1454,7 @@ public class SlotView : MonoBehaviour
       SetWinOverlayActive(true);
     }
 
-    yield return StartCoroutine(AnimateWinPositions(allWinPositions));
+    yield return StartCoroutine(ShowAndPlayWin(allWinPositions));
     yield return new WaitForSeconds(phaseGapDelay);
 
     // ---- WIN POPUP: fades in over stage 1 repeating underneath --------------------------
@@ -1472,18 +1486,18 @@ public class SlotView : MonoBehaviour
     onComplete?.Invoke();
 
     // The popup arrives as the symbols begin this second pass, and they keep cycling for as
-    // long as it is up. popupDone is only tested between passes: AnimateWinPositions has no
-    // cancel path, and cutting it mid-pass would strand its cells on winAnimationLayer with
-    // their payout text still showing. A pass is short and the fade-out overlaps it.
+    // long as it is up. popupDone is only tested between passes so a pass always completes
+    // in sync. A pass is short and the fade-out overlaps it.
     while (showPopup && !popupDone)
     {
-      yield return StartCoroutine(AnimateWinPositions(allWinPositions));
+      yield return StartCoroutine(ShowAndPlayWin(allWinPositions));
       yield return new WaitForSeconds(phaseGapDelay);
     }
 
     // Autoplay and free spins never see the per-line breakdown; the next spin follows.
     if (gameManager != null && (gameManager.isAutoPlaying || gameManager.isInFreeSpins))
     {
+      LowerAllWinCells();
       ReleaseWinOverlay();
       yield break;
     }
@@ -1495,10 +1509,9 @@ public class SlotView : MonoBehaviour
       {
         if (winLine.positions == null || winLine.positions.Count == 0) continue;
 
-        HideAllWinLineTexts();
         ShowLinePayoutText(winLine);
 
-        yield return StartCoroutine(AnimateWinPositions(winLine.positions));
+        yield return StartCoroutine(ShowAndPlayWin(winLine.positions));
         yield return new WaitForSeconds(phase2LineDelay);
       }
     }
@@ -1509,16 +1522,38 @@ public class SlotView : MonoBehaviour
     // ---- STAGE 3: idle loop, all winners together, until the next spin ----------------
     while (true)
     {
-      yield return StartCoroutine(AnimateWinPositions(allWinPositions));
+      yield return StartCoroutine(ShowAndPlayWin(allWinPositions));
       yield return new WaitForSeconds(phaseGapDelay);
     }
   }
 
   /// <summary>
   /// Put a line's payout on its <see cref="winTextColumnIndex"/> cell — the 3rd reel by
-  /// default. Falls back to the last cell of the run if the line has no entry there.
+  /// default — and take it off every other cell. The label on the chosen cell is left alone
+  /// if it is already up, so a single winning line does not re-fade it every pass.
   /// </summary>
   private void ShowLinePayoutText(WinLine winLine)
+  {
+    SlotSymbolView textCell = LinePayoutCell(winLine);
+
+    if (resultCells != null)
+    {
+      foreach (var column in resultCells)
+      {
+        if (column?.cells == null) continue;
+        foreach (var cell in column.cells)
+          if (cell != null && cell != textCell) cell.HideWinText();
+      }
+    }
+
+    if (textCell != null) textCell.ShowWinText(winLine.winAmount);
+  }
+
+  /// <summary>
+  /// The cell that carries a line's payout: its <see cref="winTextColumnIndex"/> entry, or
+  /// the last cell of the run if the line has none there.
+  /// </summary>
+  private SlotSymbolView LinePayoutCell(WinLine winLine)
   {
     int chosenFlat = -1;
 
@@ -1535,7 +1570,7 @@ public class SlotView : MonoBehaviour
     if (chosenFlat < 0) chosenFlat = winLine.positions[winLine.positions.Count - 1];
 
     DecodeFlatIndex(chosenFlat, out int textCol, out int textRow);
-    ResultCell(textCol, textRow)?.ShowWinText(winLine.winAmount);
+    return ResultCell(textCol, textRow);
   }
 
   /// <summary>
@@ -1550,68 +1585,104 @@ public class SlotView : MonoBehaviour
   }
 
   /// <summary>
-  /// Animate one set of cells and wait for every one of them to finish.
+  /// Show one set of winning cells and play one synced pass over them.
   ///
-  /// For the duration, the darkening overlay is shown and each animating cell is
-  /// reparented onto <see cref="winAnimationLayer"/> so it draws above it — everything not
-  /// participating stays behind the black panel. Cells are returned home and the overlay
-  /// hidden before this returns.
+  /// Cells stay on <see cref="winAnimationLayer"/> between passes — only the cells that are
+  /// not part of this set go back down. Repeating the same set (a single line, the popup
+  /// loop, the idle loop) therefore never reparents anything, which is what used to hitch.
   /// </summary>
-  private IEnumerator AnimateWinPositions(IEnumerable<int> flatPositions)
+  private IEnumerator ShowAndPlayWin(IEnumerable<int> flatPositions)
   {
-    if (flatPositions == null) yield break;
+    var wins = ResolveWinCells(flatPositions);
+    ShowWinCells(wins);
+    yield return PlayWinPass(wins);
+  }
+
+  /// <summary>The on-grid cells named by a set of flat win positions, with the symbol each shows.</summary>
+  private List<(SlotSymbolView cell, int symbolId)> ResolveWinCells(IEnumerable<int> flatPositions)
+  {
+    var cells = new List<(SlotSymbolView cell, int symbolId)>();
+    var seen = new HashSet<SlotSymbolView>();
+    if (flatPositions == null) return cells;
 
     int rowLimit = RowCount;
     int colLimit = ReelCount;
-
-    // Every winning cell of this stage, animated or not — all of them get lifted above the
-    // darkening panel, because a winning symbol must be readable even when it has no
-    // animation to play. Only the subset that actually staged one is waited on.
-    var participating = new List<SlotSymbolView>();
-    var staged = new List<SlotSymbolView>();
-    // Cells whose animation has ended, waiting to be dropped back to their idle look. They
-    // stay on the animation layer — a symbol that finishes early must not sink behind the
-    // darkening panel while the rest of its line is still playing.
-    var finished = new List<SlotSymbolView>();
-    int pending = 0;
 
     foreach (int flatIndex in flatPositions)
     {
       DecodeFlatIndex(flatIndex, out int col, out int row);
       if (col < 0 || col >= colLimit || row < 0 || row >= rowLimit) continue;
+      if (col >= currentDisplayMatrix.Count || row >= currentDisplayMatrix[col].Count) continue;
 
       var cell = ResultCell(col, row);
-      if (cell == null) continue;
+      if (cell != null && seen.Add(cell)) cells.Add((cell, currentDisplayMatrix[col][row]));
+    }
 
-      if (col >= currentDisplayMatrix.Count || row >= currentDisplayMatrix[col].Count) continue;
-      int symbolId = currentDisplayMatrix[col][row];
+    return cells;
+  }
 
-      // Part of the win regardless of whether it can animate.
-      participating.Add(cell);
+  /// <summary>
+  /// Make <paramref name="wins"/> exactly the set drawn above the darkening panel. Cells
+  /// that leave the set are returned to rest and put home; cells that stay are not touched,
+  /// so they keep holding whatever frame they are on.
+  /// </summary>
+  private void ShowWinCells(List<(SlotSymbolView cell, int symbolId)> wins)
+  {
+    var next = new HashSet<SlotSymbolView>();
+    foreach (var win in wins) next.Add(win.cell);
 
+    liftedWinCells.RemoveWhere(cell =>
+    {
+      if (cell == null) return true;
+      if (next.Contains(cell)) return false;
+      LowerWinCell(cell);
+      return true;
+    });
+
+    // Without a layer to lift onto the winners would animate BEHIND the panel, which looks
+    // broken — so in that case PlayWinPresentation never raised the panel and this is a no-op.
+    if (winAnimationLayer == null) return;
+
+    // In line order, so sibling draw order on the layer stays stable.
+    foreach (var win in wins)
+    {
+      if (liftedWinCells.Add(win.cell)) win.cell.MoveToAnimationLayer(winAnimationLayer);
+    }
+  }
+
+  /// <summary>
+  /// Play every cell's win animation once, all starting on the same frame, and wait for the
+  /// longest one. A shorter animation stops on its LAST frame and holds there until the rest
+  /// finish — both a one-shot ImageAnimation and a non-looping Spine track hold their end
+  /// pose by themselves. Nothing is reparented or reset to rest here; the next pass simply
+  /// restarts each animation from its first frame in place.
+  /// </summary>
+  private IEnumerator PlayWinPass(List<(SlotSymbolView cell, int symbolId)> wins)
+  {
+    if (wins.Count == 0) yield break;
+
+    var staged = new List<SlotSymbolView>();
+    int pending = 0;
+
+    foreach (var (cell, symbolId) in wins)
+    {
       if (winAnimById == null) BuildWinAnimLookup();
       if (!winAnimById.TryGetValue(symbolId, out var anim) || anim == null)
       {
-        Debug.LogError($"[SlotView] Symbol {symbolId} won at col {col} row {row} but has no " +
-                       "symbolWinAnims entry, so it cannot animate. Add one on SlotView.", this);
+        Debug.LogError($"[SlotView] Symbol {symbolId} won but has no symbolWinAnims entry, so " +
+                       "it cannot animate. Add one on SlotView.", this);
         continue;
       }
 
-      // Stage only — nothing plays yet. Both kinds run their sequence exactly ONCE and
-      // report back when it ends. A cell may only fire its callback a single time, so
-      // guard it: Spine's TrackEntry.Complete can raise more than once if the entry is
-      // reused, and a double decrement would end the stage early.
+      // Stage only — nothing plays yet. A cell may only report once: Spine's
+      // TrackEntry.Complete can raise more than once if the entry is reused, and a double
+      // decrement would end the pass early.
       bool reported = false;
       System.Action onFinished = () =>
       {
         if (reported) return;
         reported = true;
         pending--;
-        // Queue rather than settling the cell here and now: this runs inside
-        // ImageAnimation.AnimationProcess or a Spine TrackEntry.Complete event, and Spine
-        // forbids touching AnimationState from inside its own event callbacks. The
-        // coroutine drains the queue on the next frame, outside both.
-        finished.Add(cell);
       };
 
       bool didStage = anim.useSpine
@@ -1620,9 +1691,8 @@ public class SlotView : MonoBehaviour
 
       if (!didStage)
       {
-        Debug.LogError($"[SlotView] Symbol {symbolId} at col {col} row {row} could not stage " +
-                       $"its win animation (useSpine={anim.useSpine}). It will be shown " +
-                       "highlighted but static.", this);
+        Debug.LogError($"[SlotView] Symbol {symbolId} could not stage its win animation " +
+                       $"(useSpine={anim.useSpine}). It will be shown highlighted but static.", this);
         continue;
       }
 
@@ -1630,64 +1700,40 @@ public class SlotView : MonoBehaviour
       staged.Add(cell);
     }
 
-    if (participating.Count == 0) yield break;
-
-    // Lift the winners above the darkening panel. Without a layer to lift them onto they
-    // would animate BEHIND it, which looks like the presentation is broken — so in that
-    // case PlayWinPresentation never raised the panel and this is a no-op.
-    if (winAnimationLayer != null)
-      foreach (var cell in participating) cell.MoveToAnimationLayer(winAnimationLayer);
-
     if (staged.Count == 0)
     {
       // Nothing to wait on — hold the highlight for a fixed beat instead.
       yield return new WaitForSeconds(winSymbolLoopDuration);
-    }
-    else
-    {
-      if (winAnimationStartDelay > 0f)
-        yield return new WaitForSeconds(winAnimationStartDelay);
-
-      // Every symbol starts on the SAME frame, so a stage stays visually in step.
-      foreach (var cell in staged) cell.StartStagedAnimation();
-
-      // Wait on the animations themselves and nothing else. There is deliberately no
-      // timeout: a symbol that never reports completion is a bug to be found and fixed,
-      // and a fallback would hide it by quietly cutting the stage short.
-      while (pending > 0)
-      {
-        SettleFinishedCells(finished);
-        yield return null;
-      }
-
-      SettleFinishedCells(finished);
+      yield break;
     }
 
-    foreach (var cell in participating)
-    {
-      // A no-op for anything that already settled; covers the never-animated cells.
-      cell.StopWinAnimation();
-      // The payout label belongs to the highlight, not to the reel. Drop it as the cell
-      // goes back down, otherwise it lingers over a resting symbol through the inter-line
-      // delay and only clears when the NEXT line starts.
-      cell.HideWinText();
-      cell.ReturnHome();
-    }
+    if (winAnimationStartDelay > 0f)
+      yield return new WaitForSeconds(winAnimationStartDelay);
+
+    // Every symbol starts on the SAME frame, so a pass stays visually in step.
+    foreach (var cell in staged) cell.StartStagedAnimation();
+
+    // Wait on the animations themselves and nothing else. There is deliberately no timeout:
+    // a symbol that never reports completion is a bug to be found and fixed.
+    while (pending > 0) yield return null;
   }
 
-  /// <summary>
-  /// Return cells that have finished animating to their idle look, WITHOUT reparenting
-  /// them. They keep rendering above the darkening panel until every symbol in the stage
-  /// is done, so a line always reads as a whole rather than dimming symbol by symbol.
-  /// </summary>
-  private void SettleFinishedCells(List<SlotSymbolView> finished)
+  /// <summary>Return one lifted cell to its resting look and its slot in the reel.</summary>
+  private static void LowerWinCell(SlotSymbolView cell)
   {
-    if (finished.Count == 0) return;
+    cell.StopWinAnimation(0f);
+    // The payout label belongs to the highlight, not to the reel.
+    cell.HideWinText();
+    cell.ReturnHome();
+  }
 
-    foreach (var cell in finished)
-      if (cell != null) cell.StopWinAnimation(0f);
+  /// <summary>Put every lifted cell back down. For a presentation ending without a spin.</summary>
+  private void LowerAllWinCells()
+  {
+    foreach (var cell in liftedWinCells)
+      if (cell != null) LowerWinCell(cell);
 
-    finished.Clear();
+    liftedWinCells.Clear();
   }
 
   /// <summary>Drop the presentation's claim on the darkening panel and take it down.</summary>
@@ -1869,6 +1915,8 @@ public class SlotView : MonoBehaviour
           if (cell != null) cell.ResetVisualState();
       }
     }
+    // ResetVisualState above already put every lifted cell back home.
+    liftedWinCells.Clear();
 
     // Release before hiding — the hold is what stops an individual stage taking the panel
     // down mid-presentation, so it has to be dropped here or the panel could never go away.

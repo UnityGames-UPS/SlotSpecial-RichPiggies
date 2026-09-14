@@ -47592,7 +47592,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f521a04de7f494272a617b2719edd271, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SocketIOManager
-  testToken: e5a9b0561cff4a84a411273581c339b9
+  testToken: e5b205c67e564ee6b46a60f043d84876
   gameManager: {fileID: 1206269883}
   uiManager: {fileID: 885496184}
   popupManager: {fileID: 1363796882}
@@ -50176,6 +50176,9 @@ MonoBehaviour:
   musicCrossfadeDuration: 1
   sfxFadeInDuration: 0.08
   sfxFadeOutDuration: 0.25
+  reelStopFadeInDuration: 0
+  reelStopStartOffset: 0.2
+  reelSpinFadeOutDuration: 0.12
   sfxPoolSize: 8
 --- !u!4 &1330086577
 Transform:
@@ -66446,6 +66449,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 6730.834
       objectReference: {fileID: 0}
+    - target: {fileID: 1097157897625756623, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1630705716268635579, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
       propertyPath: m_AnchorMax.y
       value: 1
@@ -66574,6 +66581,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -6705.834
       objectReference: {fileID: 0}
+    - target: {fileID: 4568297713472712472, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: c27e5ed5cc4254a48a55b8740e5a97b9, type: 3}
+    - target: {fileID: 4607296162281305080, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -4776695513641400445, guid: 779ef11d65822485a8f1c51b9daafa10, type: 3}
     - target: {fileID: 5648434969943360905, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
       propertyPath: m_AnchorMax.y
       value: 1
@@ -66589,6 +66604,14 @@ PrefabInstance:
     - target: {fileID: 5648434969943360905, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -3978.3135
+      objectReference: {fileID: 0}
+    - target: {fileID: 6714971998881216535, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
+      propertyPath: m_Size
+      value: 0.16045558
+      objectReference: {fileID: 0}
+    - target: {fileID: 6714971998881216535, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
+      propertyPath: m_Value
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8387316432746957965, guid: 50e428982bc6b4fdf916b9d7b44515e1, type: 3}
       propertyPath: m_AnchorMax.y

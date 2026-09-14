@@ -268,7 +268,14 @@ public class GameManager : MonoBehaviour
       // a Mystery cell stays hidden until that locker opens; a coin on a plain cell is
       // simply visible when the column parks. The meters are passed alongside because the
       // client works out which coin moved which meter by diffing them.
-      slotView.ShowCoinOverlays(lastResult.coinOverlays, lastResult.meters);
+      //
+      // The round-ending free spin already carries the reset meters. Those are held on the
+      // round and applied when the congratulations popup opens, not at reel stop.
+      bool endsRound = isInFreeSpins && currentRound != null &&
+                       (lastResult.isRoundOver || lastResult.serverSpinsRemaining <= 0);
+      if (endsRound) currentRound.finalMeters = lastResult.meters;
+
+      slotView.ShowCoinOverlays(lastResult.coinOverlays, lastResult.meters, deferMeterResync: endsRound);
 
       // Yellow free spins: jackpot coins ride in coinOverlays too (stamped above) and fly
       // straight to their panel. Awards are latched now and their holes cleared after this
