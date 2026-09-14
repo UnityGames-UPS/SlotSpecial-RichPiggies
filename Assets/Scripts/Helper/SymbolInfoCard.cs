@@ -139,18 +139,27 @@ public class SymbolInfoCard : MonoBehaviour
 
         string symbolNameLower = symbolInfo != null ? (symbolInfo.name ?? "").ToLower() : "";
 
-        // [SYMBOL TODO] The USpin (11) and MoneyBag (12) branches went with the CNY wheel and
-        // pick bonuses. Rich Piggies replaces them with Mystery and the three piggy bonus
-        // symbols, whose ids are still being agreed with the backend — see CLAUDE.md §6. Add
-        // their cases here once that map is fixed.
-        bool isWild = (symbolId == 10) || (symbolInfo != null && symbolInfo.isWild) || symbolNameLower.Contains("wild");
+        // Only ids 0-10 are ever tappable: Mystery is inert while its locker is closed and
+        // becomes a paying symbol or Wild once it opens, and the coins are overlays that fly
+        // away rather than cells of their own. So Wild is the single non-paying case here.
+        int wildId = (gameManager != null && gameManager.gameConfig != null)
+            ? gameManager.gameConfig.wildSymbolId
+            : RichPiggiesSymbols.Wild;
+
+        bool isWild = (symbolId == wildId) || (symbolInfo != null && symbolInfo.isWild) || symbolNameLower.Contains("wild");
 
         if (isWild)
         {
             // SPECIAL SYMBOL: Text alignment CENTER
             infoText.alignment = TextAlignmentOptions.Center;
             infoText.enableWordWrapping = true;
-            infoText.text = "Substitutes for all symbols except the Blue, Yellow and Red Piggy.";
+
+            // Server-authored copy, so the wording stays in one place. The literal is only
+            // a fallback for an init that sends no description.
+            string description = symbolInfo?.description;
+            infoText.text = !string.IsNullOrEmpty(description)
+                ? description
+                : "Substitutes for all symbols except the Blue, Yellow and Red Piggy.";
         }
         else
         {

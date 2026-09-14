@@ -390,6 +390,9 @@ internal class WinPopupController : MonoBehaviour
     activeTier = tier;
     skipRequested = false;
 
+    // Lowest tier gets the normal-win sting; every tier above it shares the big-win track.
+    AudioManager.Instance?.PlayWin(bigWin: tier != LowestTier());
+
     // The panel itself, before the tier's popup inside it: Awake hides the popup by
     // deactivating it, but the shared WinPanel may also be switched off in the scene, and a
     // child activated under a dead parent renders nothing.
@@ -540,6 +543,21 @@ internal class WinPopupController : MonoBehaviour
     return best;
   }
 
+  /// <summary>The tier with the smallest minMultiplier — the "Normal" band.</summary>
+  private WinTier LowestTier()
+  {
+    WinTier lowest = null;
+    if (winTiers == null) return null;
+
+    foreach (var tier in winTiers)
+    {
+      if (tier == null) continue;
+      if (lowest == null || tier.minMultiplier < lowest.minMultiplier) lowest = tier;
+    }
+
+    return lowest;
+  }
+
   private void StartBackgroundAnimation(WinTier tier)
   {
     if (tier.bgAnim == null) return;
@@ -632,6 +650,8 @@ internal class WinPopupController : MonoBehaviour
 
   private void ResetPresentation(bool instant, bool restoreControls)
   {
+    AudioManager.Instance?.StopWin();
+
     if (activeTier != null)
     {
       CoinAnimator.Stop(activeTier.bgAnim);

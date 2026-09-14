@@ -13,30 +13,6 @@ public class InitData
   public ServerFeatures features;
   public ServerUIData uiData;
   public ServerPlayer player;
-  public JackpotData jackpotData;
-}
-
-[Serializable]
-public class JackpotData
-{
-  public JackpotValues values;//jackpotfeature
-
-}
-
-[Serializable]
-public class JackpotValues
-{
-  public string miniJackpot;
-  public string minorJackpot;
-  public string majorJackpot;
-  public string grandJackpot;
-}
-
-[Serializable]
-public class JackpotSyncData
-{
-  public string gameId;
-  public JackpotValues values;
 }
 
 [Serializable]
@@ -421,6 +397,12 @@ public class SymbolInfo
   public int id;
   public string name;
 
+  /// <summary>
+  /// Server-authored blurb. Only the non-paying symbols (Wild, Mystery, the coins) ship
+  /// one; the paying symbols send an empty string and show their payout rows instead.
+  /// </summary>
+  public string description;
+
   /// <summary>Payouts ordered by match count DESCENDING — index 0 is the longest run.</summary>
   public List<double> multipliers;
 
@@ -588,6 +570,7 @@ public static class InitDataConverter
       {
         id = serverSymbol.id,
         name = serverSymbol.name,
+        description = serverSymbol.description,
         multipliers = new List<double>(),
         matchCounts = new List<int>(),
         isWild = serverSymbol.name.ToLower() == "wild",

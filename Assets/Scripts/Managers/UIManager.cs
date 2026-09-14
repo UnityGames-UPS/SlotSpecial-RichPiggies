@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
 using System.Collections;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
@@ -124,16 +125,16 @@ public class UIManager : MonoBehaviour
 
     [Header("Game Rules Dynamic Texts")]
     [SerializeField] private TMP_Text totalLineCountText;
-    [SerializeField] private TMP_Text ruleSymbol0Text;
-    [SerializeField] private TMP_Text ruleSymbol1Text;
-    [SerializeField] private TMP_Text ruleSymbol2Text;
-    [SerializeField] private TMP_Text ruleSymbol3Text;
-    [SerializeField] private TMP_Text ruleSymbol4Text;
-    [SerializeField] private TMP_Text ruleSymbol5Text;
-    [SerializeField] private TMP_Text ruleSymbol6Text;
-    [SerializeField] private TMP_Text ruleSymbol7Text;
-    [SerializeField] private TMP_Text ruleSymbol8Text;
-    [SerializeField] private TMP_Text ruleSymbol9Text;
+    [Tooltip("Paytable rows for BusinessPig (id 0).")]
+    [SerializeField] private TMP_Text ruleBusinessPigText;
+    [Tooltip("Paytable rows for LadyPig (id 1).")]
+    [SerializeField] private TMP_Text ruleLadyPigText;
+    [Tooltip("Shared paytable rows for BeachPig and DiamondPendant (ids 2, 3).")]
+    [SerializeField] private TMP_Text ruleBeachPigPendantText;
+    [Tooltip("Shared paytable rows for Yacht, A and K (ids 4, 5, 6).")]
+    [SerializeField] private TMP_Text ruleYachtAKText;
+    [Tooltip("Shared paytable rows for Q, J and 10 (ids 7, 8, 9).")]
+    [SerializeField] private TMP_Text ruleQJ10Text;
 
     [Header("Free Spin Count Display - Game Screen")]
     [Tooltip("The FreeSpinDisplay panel. Shown for the whole round, from the trigger popup " +
@@ -167,18 +168,6 @@ public class UIManager : MonoBehaviour
     [Header("Ping Display")]
     [SerializeField] private TMP_Text pingText;
     [SerializeField] private TMP_Text pingTextPortrait;
-
-    [Header("Platform Jackpot")]
-    [SerializeField] private TMP_Text grandJackpotText;
-    [SerializeField] private TMP_Text majorJackpotText;
-    [SerializeField] private TMP_Text minorJackpotText;
-    [SerializeField] private TMP_Text miniJackpotText;
-
-    [Header("Platform Jackpot - Portrait")]
-    [SerializeField] private TMP_Text grandJackpotTextPortrait;
-    [SerializeField] private TMP_Text majorJackpotTextPortrait;
-    [SerializeField] private TMP_Text minorJackpotTextPortrait;
-    [SerializeField] private TMP_Text miniJackpotTextPortrait;
 
     [Header("Expand-Shrink Controls")]
     [SerializeField] private Button expandButton;
@@ -300,10 +289,6 @@ public class UIManager : MonoBehaviour
                 string errorMsg = gameManager.initializationFailed ? "Game failed to initialize." : "Initialization timed out. Please check your connection.";
                 popupManager.ShowErrorPopup("Connection Error", errorMsg, true);
             }
-        }
-        else
-        {
-            AudioManager.Instance?.PlayBgMusic();
         }
     }
 
@@ -939,6 +924,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
+            AudioManager.Instance?.PlayButton();
             soundPanel.SetActive(false);
         }
     }
@@ -1062,6 +1048,7 @@ public class UIManager : MonoBehaviour
 
     private void OpenGameRulesPanel()
     {
+        AudioManager.Instance?.PlayButton();
         if (isSettingsPanelOpen)
         {
             CloseSettingsPanelImmediate();
@@ -1087,6 +1074,7 @@ public class UIManager : MonoBehaviour
 
     private void OpenGuidePanel()
     {
+        AudioManager.Instance?.PlayButton();
         if (isSettingsPanelOpen)
         {
             CloseSettingsPanelImmediate();
@@ -1231,6 +1219,10 @@ public class UIManager : MonoBehaviour
     {
         isFreeSpinBackground = freeSpin;
 
+        // Music follows the picture: it crossfades in the same beat as the background.
+        if (freeSpin) AudioManager.Instance?.PlayFreeSpinBg();
+        else AudioManager.Instance?.PlayMainBg();
+
         var baseGroup = isPortraitLayout ? baseBackgroundPortrait : baseBackground;
         var freeSpinGroup = isPortraitLayout ? freeSpinBackgroundPortrait : freeSpinBackground;
         var fadingIn = freeSpin ? freeSpinGroup : baseGroup;
@@ -1344,22 +1336,6 @@ public class UIManager : MonoBehaviour
         SetTMPText(pingText, pingTextPortrait, content);
     }
 
-    internal void UpdateJackpotDisplay(JackpotValues values)
-    {
-        if (values == null) return;
-
-        SetTMPText(grandJackpotText, grandJackpotTextPortrait, FormatJackpotValue(values.grandJackpot));
-        SetTMPText(majorJackpotText, majorJackpotTextPortrait, FormatJackpotValue(values.majorJackpot));
-        SetTMPText(minorJackpotText, minorJackpotTextPortrait, FormatJackpotValue(values.minorJackpot));
-        SetTMPText(miniJackpotText, miniJackpotTextPortrait, FormatJackpotValue(values.miniJackpot));
-    }
-
-    private string FormatJackpotValue(string val)
-    {
-        if (string.IsNullOrEmpty(val)) return "$0.00";
-        return val.StartsWith("$") ? val : "$" + val;
-    }
-
     internal void UpdateBalanceDisplay()
     {
         SetTMPText(balanceText, balanceTextPortrait, "BALANCE : " + FormatAmount(gameManager.playerData.balance));
@@ -1426,42 +1402,38 @@ public class UIManager : MonoBehaviour
             totalLineCountText.text = gameManager.gameConfig.paylineCount.ToString();
         }
 
-        TMP_Text[] symbolTexts = {
-            ruleSymbol0Text, ruleSymbol1Text, ruleSymbol2Text, ruleSymbol3Text,
-            ruleSymbol4Text, ruleSymbol5Text, ruleSymbol6Text, ruleSymbol7Text,
-            ruleSymbol8Text, ruleSymbol9Text
+        if (gameManager.gameConfig.symbols == null) return;
+
+        // A shared box reads the payout of the first id in its group.
+        (TMP_Text text, int symbolId)[] ruleTexts = {
+            (ruleBusinessPigText, 0),
+            (ruleLadyPigText, 1),
+            (ruleBeachPigPendantText, 2),
+            (ruleYachtAKText, 4),
+            (ruleQJ10Text, 7)
         };
 
-        if (gameManager.gameConfig.symbols != null)
+        double bet = gameManager.currentBetAmount;
+
+        foreach (var (text, symbolId) in ruleTexts)
         {
-            for (int i = 0; i < symbolTexts.Length; i++)
+            if (text == null) continue;
+
+            var symbol = gameManager.gameConfig.symbols.Find(s => s.id == symbolId);
+            if (symbol == null || symbol.multipliers == null || symbol.multipliers.Count == 0) continue;
+
+            // multipliers are ordered by match count descending, so this reads 5 / 4 / 3.
+            var lines = new List<string>(symbol.multipliers.Count);
+            for (int m = 0; m < symbol.multipliers.Count; m++)
             {
-                if (symbolTexts[i] == null) continue;
+                int matchCount = (symbol.matchCounts != null && m < symbol.matchCounts.Count)
+                    ? symbol.matchCounts[m]
+                    : 5 - m;
 
-                var symbol = gameManager.gameConfig.symbols.Find(s => s.id == i);
-                if (symbol != null && symbol.multipliers != null && symbol.multipliers.Count > 0)
-                {
-                    double originalBetAmount = gameManager.currentBetAmount;
-                    string fullText = "";
-                    
-                    for (int m = 0; m < symbol.multipliers.Count; m++)
-                    {
-                        // Read the real match count rather than assuming the list starts at
-                        // a 5-of-a-kind: the jackpot symbols pay on ONE symbol, so theirs is
-                        // just { 1 } and counting down from 5 would mislabel every row.
-                        int currentMatch = (symbol.matchCounts != null && m < symbol.matchCounts.Count)
-                            ? symbol.matchCounts[m]
-                            : 5 - m;
-
-                        double win = symbol.multipliers[m];
-                        string line = $"{currentMatch}     {win.ToString("0.###")}";
-                        if (m == 0) fullText = line;
-                        else fullText += $"\n{line}";
-                    }
-                    
-                    symbolTexts[i].text = fullText;
-                }
+                lines.Add($"{matchCount} - {FormatAmount(bet * symbol.multipliers[m])}");
             }
+
+            text.text = string.Join("\n", lines);
         }
     }
 

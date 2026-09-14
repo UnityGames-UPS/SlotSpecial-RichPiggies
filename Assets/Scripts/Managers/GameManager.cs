@@ -651,7 +651,6 @@ public class GameManager : MonoBehaviour
     freeSpinsRemaining = round.totalSpins;
     freeSpinsUsed = 0;
     waitingForFreeSpinStart = true;
-    AudioManager.Instance?.PlayFreeSpinBg();
 
     // A trigger ENDS autoplay outright rather than suspending it — the round takes the screen
     // over completely, and handing it back to an autoplay the player set up minutes ago is not
@@ -720,7 +719,6 @@ public class GameManager : MonoBehaviour
 
     isInFreeSpins = false;
     freeSpinsRemaining = 0;
-    AudioManager.Instance?.PlayMainBg();
 
     double totalRoundWin = currentRound != null ? currentRound.accumulatedWin : 0;
     int totalSpinsUsed = currentRound != null ? currentRound.spinsUsed : 0;

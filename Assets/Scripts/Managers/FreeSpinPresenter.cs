@@ -372,6 +372,7 @@ internal class FreeSpinPresenter : MonoBehaviour
 
     dismissRequested = false;
     SetActive(triggeredPopup, true);
+    AudioManager.Instance?.PlayFreeSpinRewarded();
 
     triggeredPopupRect.localScale = Vector3.zero;
     yield return triggeredPopupRect
@@ -385,7 +386,6 @@ internal class FreeSpinPresenter : MonoBehaviour
     while (!dismissRequested) yield return null;
 
     SetDismissButtons(false);
-    AudioManager.Instance?.PlayPopupClose();
 
     yield return triggeredPopupRect
         .DOScale(0f, popupScaleDownDuration).SetEase(popupScaleDownEase)
@@ -448,6 +448,7 @@ internal class FreeSpinPresenter : MonoBehaviour
   {
     if (dismissRequested) return;
     dismissRequested = true;
+    AudioManager.Instance?.PlayButton();
   }
 
   /// <summary>
@@ -716,6 +717,7 @@ internal class FreeSpinPresenter : MonoBehaviour
     congratsFountain?.Play();
 
     SetActive(congratsPopup, true);
+    AudioManager.Instance?.PlayCongratulations();
 
     if (!congratsPopup.activeInHierarchy)
     {

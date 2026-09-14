@@ -9,12 +9,10 @@ using Spine.Unity;
 /// <summary>
 /// The three persistent pig meters and the six jackpot payouts.
 ///
-/// This lives apart from UIManager on purpose: UIManager's existing jackpot block drives
-/// the PLATFORM jackpot ticker (four tiers, dollar strings pushed by the jackpot:sync socket
-/// event), which is a different thing entirely from Rich Piggies' six per-bet jackpot
-/// meters. It still follows UIManager's conventions to the letter — every control has a
-/// landscape and a portrait reference and both are written together, because the player can
-/// rotate at any moment and the off-screen set must already be correct when they do.
+/// This lives apart from UIManager, but follows its conventions to the letter — every
+/// control has a landscape and a portrait reference and both are written together, because
+/// the player can rotate at any moment and the off-screen set must already be correct when
+/// they do.
 ///
 /// Everything shown here is server state. The client never accumulates a meter; it renders
 /// the value the server sent and, during the coin beat, walks the display from the previous

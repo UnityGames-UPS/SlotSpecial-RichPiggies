@@ -27,6 +27,7 @@ public class SymbolButtonHandler : MonoBehaviour
 
     private void OnClick()
     {
+        AudioManager.Instance?.PlayButton();
         if (slotView != null)
         {
             slotView.OnSymbolClicked(columnIndex, rowIndex, transform as RectTransform);

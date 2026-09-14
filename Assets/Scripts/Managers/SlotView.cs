@@ -646,6 +646,7 @@ public class SlotView : MonoBehaviour
     // reel has moved. The intro pass carries the old result off-screen first, and each
     // column shuffles its whole strip at the handover point instead (see StartColumn).
     isSpinning = true;
+    AudioManager.Instance?.StartReelSpin();
 
     int count = reelTransforms != null ? reelTransforms.Length : 0;
     reelTweens = new Tween[count];
@@ -716,6 +717,7 @@ public class SlotView : MonoBehaviour
     if (count == 0)
     {
       isSpinning = false;
+      AudioManager.Instance?.StopReelSpin();
       // Nothing will ever land, so nothing can open the lockers or launch the coins — do not
       // leave either covering the grid through the win presentation. The meters still take
       // the server's values, since those are true whether or not anything animated.
@@ -744,6 +746,10 @@ public class SlotView : MonoBehaviour
         playedStopOnce = true;
       }
     }
+
+    // Every column is now on its way down, so nothing is visibly spinning any more. Fading out
+    // after the settle tween would leave the loop running under the last reel's overshoot.
+    AudioManager.Instance?.StopReelSpin();
 
     // Wait on the last column's settle tween. Guarded because Kill() can null it out.
     Tween last = reelTweens.Length > 0 ? reelTweens[reelTweens.Length - 1] : null;
@@ -886,6 +892,9 @@ public class SlotView : MonoBehaviour
       pending++;
       staged.Add(cell);
     }
+
+    // One sound for the whole reveal, however many lockers open.
+    if (staged.Count > 0) AudioManager.Instance?.PlayMysteryReveal();
 
     // Every locker opens on the SAME frame, so the reveal reads as one beat.
     foreach (var cell in staged) cell.StartStagedLocker();
@@ -1065,7 +1074,10 @@ public class SlotView : MonoBehaviour
             else if (coinId == RichPiggiesSymbols.RedCoin) pigMeters.SetRedText(plan.meterValueAfter);
 
             if (coinId == RichPiggiesSymbols.BlueCoin || coinId == RichPiggiesSymbols.RedCoin)
+            {
               pigMeters.PlayMeterEffect(coinId);
+              AudioManager.Instance?.PlayMeterAdd();
+            }
           }
         },
         onArrive: null));
@@ -1097,6 +1109,7 @@ public class SlotView : MonoBehaviour
       // rather than silently holding the old number.
       pigMeters.SetJackpotText(award.tier, award.valueAfter);
       pigMeters.PlayJackpotShine(award.tier);
+      AudioManager.Instance?.PlayJackpotMultiplierIncrease();
       yield break;
     }
 
@@ -1118,6 +1131,7 @@ public class SlotView : MonoBehaviour
           pigMeters.StopJackpotCoinAnimation(coin);
           pigMeters.SetJackpotText(tier, valueAfter);
           pigMeters.PlayJackpotShine(tier);
+          AudioManager.Instance?.PlayJackpotMultiplierIncrease();
         },
         onArrive: null));
 
@@ -1418,8 +1432,6 @@ public class SlotView : MonoBehaviour
     // is what lands in the win field, so the popup shows exactly that.
     double totalWinAmount = gameManager != null && gameManager.lastResult != null
         ? gameManager.lastResult.winAmount : 0;
-
-    AudioManager.Instance?.PlayWinLinePhase1Start();
 
     // Raise the darkening panel once, for the whole presentation. See winOverlayHeld.
     if (winAnimationLayer != null)
@@ -1806,10 +1818,20 @@ public class SlotView : MonoBehaviour
       return;
     }
 
-    if (currentDisplayMatrix == null || col >= currentDisplayMatrix.Count || row >= currentDisplayMatrix[col].Count)
-      return;
+    var cell = ResultCell(col, row);
+    if (cell == null) return;
 
-    int symbolId = currentDisplayMatrix[col][row];
+    // A closed locker is deliberately inert. PopulateResultMatrix writes the REVEALED id
+    // into the cell while the locker still covers it, so answering a tap here would show
+    // the player what is under the locker before it opens.
+    if (cell.IsLockerVisible) return;
+
+    // The CELL, not currentDisplayMatrix, is what the player is looking at: the matrix
+    // holds the server result and stays all-zeros until the first one lands, while the
+    // cells are painted by ShuffleAllCells from Start onwards.
+    int symbolId = cell.SymbolId;
+    if (symbolId < 0) return;
+
     if (symbolInfoCard != null)
       symbolInfoCard.ShowCard(symbolId, col, row, symbolRect, gameManager);
   }

@@ -163,7 +163,6 @@ public class SocketIOManager : MonoBehaviour
         gameSocket.On("pong", OnPongReceivedNoArgs);
         gameSocket.On<string>("AnotherDevice", OnAnotherDevice);
         gameSocket.On<string>("balance:sync", OnBalanceSyncReceived);
-        gameSocket.On<string>("jackpot:sync", OnJackpotSyncReceived);
 
         socketManager.Open();
     }
@@ -278,11 +277,6 @@ public class SocketIOManager : MonoBehaviour
 
             gameManager.OnInitDataReceived(gameConfig, playerData, initialMatrix);
 
-            if (initData.jackpotData != null && initData.jackpotData.values != null && uiManager != null)
-            {
-                uiManager.UpdateJackpotDisplay(initData.jackpotData.values);
-            }
-
             if (RaycastBlocker) RaycastBlocker.SetActive(false);
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -374,25 +368,6 @@ public class SocketIOManager : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError($"[SocketIO] Balance Sync parse failed: {e.Message}");
-        }
-    }
-
-    private void OnJackpotSyncReceived(string jsonData)
-    {
-        Debug.Log($"[SocketIO] Jackpot Sync received: {jsonData}");
-
-        try
-        {
-            var syncData = JsonConvert.DeserializeObject<JackpotSyncData>(jsonData);
-
-            if (syncData != null && syncData.values != null && uiManager != null)
-            {
-                uiManager.UpdateJackpotDisplay(syncData.values);
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[SocketIO] Jackpot Sync parse failed: {e.Message}");
         }
     }
 

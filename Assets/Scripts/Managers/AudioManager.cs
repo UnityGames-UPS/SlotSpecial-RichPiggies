@@ -1,8 +1,72 @@
+using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
+/// <summary>
+/// Every sound in the game. All sources are created at runtime, so the only Inspector wiring
+/// is the clips. Every sound fades in; music crossfades between the base and free-spin tracks.
+/// </summary>
 public class AudioManager : MonoBehaviour
 {
     internal static AudioManager Instance { get; private set; }
+
+    private const string PrefKeyMusic    = "audio_music_enabled";
+    private const string PrefKeysfx      = "audio_sfx_enabled";
+    private const string PrefKeyMusicVol = "audio_music_volume";
+    private const string PrefKeySfxVol   = "audio_sfx_volume";
+
+    [Header("Music")]
+    [SerializeField] private AudioClip clipBg;
+    [SerializeField] private AudioClip clipFreeSpinBg;
+
+    [Header("SFX")]
+    [SerializeField] private AudioClip clipButton;
+    [SerializeField] private AudioClip clipMaxBet;
+    [SerializeField] private AudioClip clipNormalWin;
+    [SerializeField] private AudioClip clipBigWins;
+    [SerializeField] private AudioClip clipCongratulations;
+    [SerializeField] private AudioClip clipFreeSpinRewarded;
+    [SerializeField] private AudioClip clipMeterAdd;
+    [SerializeField] private AudioClip clipJackpotMultiplierIncrease;
+    [SerializeField] private AudioClip clipMysteryReveal;
+    [SerializeField] private AudioClip clipReelSpinning;
+    [SerializeField] private AudioClip clipReelStop;
+
+    [Header("Fades")]
+    [SerializeField] private float musicCrossfadeDuration = 1f;
+    [SerializeField] private float sfxFadeInDuration = 0.08f;
+    [SerializeField] private float sfxFadeOutDuration = 0.25f;
+
+    [Tooltip("Fade-in for the reel-stop thud. A percussive hit loses its attack under any real " +
+             "fade and reads as landing late, so this defaults to none.")]
+    [SerializeField] private float reelStopFadeInDuration = 0f;
+
+    [Tooltip("Fade-out of the reel-spinning loop once the last reel starts landing.")]
+    [SerializeField] private float reelSpinFadeOutDuration = 0.12f;
+
+    [Tooltip("How many SFX can overlap. The oldest one is cut when all are busy.")]
+    [SerializeField] private int sfxPoolSize = 8;
+
+    private AudioSource musicA;
+    private AudioSource musicB;
+    private AudioSource activeMusic;
+    private AudioSource reelSpinSource;
+    private AudioSource winSource;
+    private readonly List<AudioSource> sfxPool = new List<AudioSource>();
+    private readonly Dictionary<AudioSource, float> sfxStartTimes = new Dictionary<AudioSource, float>();
+
+    private bool _musicEnabled = true;
+    private bool _sfxEnabled   = true;
+    private float _musicVolume = 0.5f;
+    private float _sfxVolume   = 1.0f;
+
+    internal bool MusicEnabled => _musicEnabled;
+    internal bool SfxEnabled   => _sfxEnabled;
+    internal float MusicVolume => _musicVolume;
+    internal float SfxVolume   => _sfxVolume;
+
+    private float MusicTargetVolume => _musicEnabled ? _musicVolume : 0f;
+    private float SfxTargetVolume   => _sfxEnabled ? _sfxVolume : 0f;
 
     private void Awake()
     {
@@ -19,43 +83,32 @@ public class AudioManager : MonoBehaviour
         _musicVolume  = PlayerPrefs.GetFloat(PrefKeyMusicVol, 0.5f);
         _sfxVolume    = PlayerPrefs.GetFloat(PrefKeySfxVol,   1.0f);
 
-        ApplyMusicVolume();
-        ApplySfxVolume();
+        musicA         = CreateSource(loop: true);
+        musicB         = CreateSource(loop: true);
+        reelSpinSource = CreateSource(loop: true);
+        winSource      = CreateSource(loop: false);
+        for (int i = 0; i < Mathf.Max(1, sfxPoolSize); i++)
+            sfxPool.Add(CreateSource(loop: false));
+
+        activeMusic = musicA;
     }
 
-    private const string PrefKeyMusic    = "audio_music_enabled";
-    private const string PrefKeysfx      = "audio_sfx_enabled";
-    private const string PrefKeyMusicVol = "audio_music_volume";
-    private const string PrefKeySfxVol   = "audio_sfx_volume";
+    private void Start()
+    {
+        PlayBgMusic();
+    }
 
-    [Header("Audio Sources")]
-    [SerializeField] private AudioSource bgMusicSource;
-    [SerializeField] private AudioSource uiSource;
-    [SerializeField] private AudioSource wheelSegmentSource;
-    [SerializeField] private AudioSource reserveSource;
+    private AudioSource CreateSource(bool loop)
+    {
+        var source = gameObject.AddComponent<AudioSource>();
+        source.playOnAwake  = false;
+        source.loop         = loop;
+        source.spatialBlend = 0f;
+        source.volume       = 0f;
+        return source;
+    }
 
-    [Header("Audio Clips")]
-    [SerializeField] private AudioClip clipGameMainBg;
-    [SerializeField] private AudioClip clipBetPlusMinus;
-    [SerializeField] private AudioClip clipMaxBetReached;
-    [SerializeField] private AudioClip clipWinObjectBg;
-    [SerializeField] private AudioClip clipPrimaryActionButton;
-    [SerializeField] private AudioClip clipGeneralButtonClick;
-    [SerializeField] private AudioClip clipPopupOpenClose;
-    [SerializeField] private AudioClip clipAutoplayPanelOpen;
-    [SerializeField] private AudioClip clipFreeSpinBg;
-    [SerializeField] private AudioClip clipWinLinePhase1Start;
-    [SerializeField] private AudioClip clipReelStop;
-
-    private bool _musicEnabled = true;
-    private bool _sfxEnabled   = true;
-    private float _musicVolume = 0.5f;
-    private float _sfxVolume   = 1.0f;
-
-    internal bool MusicEnabled => _musicEnabled;
-    internal bool SfxEnabled   => _sfxEnabled;
-    internal float MusicVolume => _musicVolume;
-    internal float SfxVolume   => _sfxVolume;
+    #region Settings
 
     internal void SetMusicEnabled(bool on)
     {
@@ -89,167 +142,185 @@ public class AudioManager : MonoBehaviour
         ApplySfxVolume();
     }
 
+    /// <summary>
+    /// Snap the playing music to the new volume. A source that is fading OUT is left alone — it
+    /// is on its way to silence either way.
+    /// </summary>
     private void ApplyMusicVolume()
     {
-        if (bgMusicSource == null) return;
-        bgMusicSource.volume = _musicEnabled ? _musicVolume : 0f;
+        SnapIfPlaying(activeMusic, MusicTargetVolume);
     }
 
     private void ApplySfxVolume()
     {
-        float v = _sfxEnabled ? _sfxVolume : 0f;
-        if (uiSource           != null) uiSource.volume           = v;
-        if (wheelSegmentSource != null) wheelSegmentSource.volume = v;
-        if (reserveSource      != null) reserveSource.volume      = v;
+        float v = SfxTargetVolume;
+        foreach (var source in sfxPool) SnapIfPlaying(source, v);
+        SnapIfPlaying(winSource, v);
+        SnapIfPlaying(reelSpinSource, v);
     }
 
-    /// <summary>
-    /// Uses UI source (AudioSource 2). If busy/playing, falls back to reserve source (AudioSource 4).
-    /// </summary>
-    private void PlayUISound(AudioClip clip)
+    private void SnapIfPlaying(AudioSource source, float volume)
     {
-        if (!_sfxEnabled || clip == null) return;
-
-        if (uiSource != null && !uiSource.isPlaying)
-        {
-            uiSource.PlayOneShot(clip);
-        }
-        else if (reserveSource != null)
-        {
-            reserveSource.PlayOneShot(clip);
-        }
-        else if (uiSource != null)
-        {
-            uiSource.PlayOneShot(clip);
-        }
+        if (source == null || !source.isPlaying || fadingOut.Contains(source)) return;
+        DOTween.Kill(source);
+        source.volume = volume;
     }
 
-    private void PlayLoop(AudioSource source, AudioClip clip)
+    #endregion
+
+    #region Fades
+
+    // Sources currently fading to silence. A settings change must not snap these back up,
+    // since killing their tween would also skip the Stop at its end.
+    private readonly HashSet<AudioSource> fadingOut = new HashSet<AudioSource>();
+
+    private Tween FadeVolume(AudioSource source, float target, float duration)
     {
-        if (source == null || clip == null) return;
+        DOTween.Kill(source);
+        fadingOut.Remove(source);
+        return DOTween.To(() => source.volume, v => source.volume = v, target, Mathf.Max(0f, duration))
+                      .SetTarget(source)
+                      .SetUpdate(true);
+    }
+
+    private void FadeIn(AudioSource source, AudioClip clip, float targetVolume, float duration)
+    {
+        DOTween.Kill(source);
+        fadingOut.Remove(source);
         source.clip   = clip;
-        source.loop   = true;
-        source.volume = _musicEnabled ? _musicVolume : 0f;
+        source.volume = 0f;
         source.Play();
+        FadeVolume(source, targetVolume, duration);
     }
 
-    private void StopSource(AudioSource source)
+    private void FadeOutAndStop(AudioSource source, float duration)
     {
-        if (source == null) return;
-        source.Stop();
-        source.loop = false;
+        if (source == null || !source.isPlaying) return;
+        FadeVolume(source, 0f, duration).OnComplete(() =>
+        {
+            fadingOut.Remove(source);
+            source.Stop();
+        });
+        fadingOut.Add(source);
     }
 
-    // 1. Game Main BG
-    internal void PlayBgMusic()
+    #endregion
+
+    #region Music
+
+    private void CrossfadeTo(AudioClip clip)
     {
-        if (bgMusicSource == null || clipGameMainBg == null) return;
-        if (bgMusicSource.isPlaying && bgMusicSource.clip == clipGameMainBg) return;
+        if (clip == null || musicA == null) return;
+        if (activeMusic.isPlaying && activeMusic.clip == clip) return;
 
-        bgMusicSource.clip   = clipGameMainBg;
-        bgMusicSource.loop   = true;
-        bgMusicSource.volume = _musicEnabled ? _musicVolume : 0f;
-        bgMusicSource.Play();
+        AudioSource outgoing = activeMusic;
+        AudioSource incoming = activeMusic == musicA ? musicB : musicA;
+
+        FadeOutAndStop(outgoing, musicCrossfadeDuration);
+        FadeIn(incoming, clip, MusicTargetVolume, musicCrossfadeDuration);
+        activeMusic = incoming;
     }
 
-    internal void PlayMainBg() => PlayBgMusic();
+    internal void PlayBgMusic()    => CrossfadeTo(clipBg);
+    internal void PlayMainBg()     => PlayBgMusic();
+    internal void PlayFreeSpinBg() => CrossfadeTo(clipFreeSpinBg);
 
     internal void StopBgMusic()
     {
-        StopSource(bgMusicSource);
+        FadeOutAndStop(musicA, musicCrossfadeDuration);
+        FadeOutAndStop(musicB, musicCrossfadeDuration);
     }
 
-    // 2. Bet Plus / Bet Minus (one for both)
-    internal void PlayBetPlusMinus()
-    {
-        PlayUISound(clipBetPlusMinus);
-    }
+    #endregion
 
-    internal void PlayBetPlus()  => PlayBetPlusMinus();
-    internal void PlayBetMinus() => PlayBetPlusMinus();
+    #region SFX
 
-    // 3. Max Bet Reached
-    internal void PlayMaxBetReached()
-    {
-        PlayUISound(clipMaxBetReached);
-    }
+    /// <summary>
+    /// Play a clip on a free pooled source with a fade-in. When every source is busy the one
+    /// that started longest ago is cut.
+    /// </summary>
+    private AudioSource PlaySfx(AudioClip clip) => PlaySfx(clip, sfxFadeInDuration);
 
-    // 5. Win Object BG (Play at Open)
-    internal void PlayWinObjectBg()
+    private AudioSource PlaySfx(AudioClip clip, float fadeInDuration)
     {
-        if (!_sfxEnabled || clipWinObjectBg == null) return;
-        PlayLoop(uiSource, clipWinObjectBg);
-    }
+        if (!_sfxEnabled || clip == null || sfxPool.Count == 0) return null;
 
-    internal void StopWinObjectBg()
-    {
-        if (uiSource != null && uiSource.clip == clipWinObjectBg)
+        AudioSource chosen = null;
+        float oldest = float.MaxValue;
+        foreach (var source in sfxPool)
         {
-            StopSource(uiSource);
+            if (!source.isPlaying) { chosen = source; break; }
+
+            float started = sfxStartTimes.TryGetValue(source, out var t) ? t : 0f;
+            if (started < oldest) { oldest = started; chosen = source; }
         }
-        if (reserveSource != null && reserveSource.clip == clipWinObjectBg)
-        {
-            StopSource(reserveSource);
-        }
+
+        sfxStartTimes[chosen] = Time.unscaledTime;
+        FadeIn(chosen, clip, SfxTargetVolume, fadeInDuration);
+        return chosen;
     }
 
-    // 6. Spin / Stop / Take / AutoplayStop / WheelStart Btn Sound
-    internal void PlayPrimaryActionButton()
-    {
-        PlayUISound(clipPrimaryActionButton != null ? clipPrimaryActionButton : clipGeneralButtonClick);
-    }
-
-    internal void PlaySpinStart()    => PlayPrimaryActionButton();
-    internal void PlaySpinStop()     => PlayPrimaryActionButton();
-    internal void PlayTakeButton()   => PlayPrimaryActionButton();
-    internal void PlayAutoplayStop() => PlayPrimaryActionButton();
-
-    // 7. General Button Click
-    internal void PlayButton()
-    {
-        PlayUISound(clipGeneralButtonClick);
-    }
+    // Buttons — every button shares one click.
+    internal void PlayButton() => PlaySfx(clipButton);
 
     internal void PlayGeneralButtonClick() => PlayButton();
+    internal void PlayPrimaryActionButton() => PlayButton();
+    internal void PlaySpinStart()          => PlayButton();
+    internal void PlaySpinStop()           => PlayButton();
+    internal void PlayTakeButton()         => PlayButton();
+    internal void PlayAutoplayStop()       => PlayButton();
+    internal void PlayPopupOpenClose()     => PlayButton();
+    internal void PlayPopupOpen()          => PlayButton();
+    internal void PlayPopupClose()         => PlayButton();
+    internal void PlayAutoplayPanelOpen()  => PlayButton();
+    internal void PlayBetPlusMinus()       => PlayButton();
+    internal void PlayBetPlus()            => PlayButton();
+    internal void PlayBetMinus()           => PlayButton();
 
-    // 8. Popup Open Close Sound
-    internal void PlayPopupOpenClose()
+    internal void PlayMaxBet()         => PlaySfx(clipMaxBet);
+    internal void PlayMaxBetReached()  => PlayMaxBet();
+
+    internal void PlayCongratulations()           => PlaySfx(clipCongratulations);
+    internal void PlayFreeSpinRewarded()          => PlaySfx(clipFreeSpinRewarded);
+    internal void PlayMeterAdd()                  => PlaySfx(clipMeterAdd);
+    internal void PlayJackpotMultiplierIncrease() => PlaySfx(clipJackpotMultiplierIncrease);
+    internal void PlayMysteryReveal()             => PlaySfx(clipMysteryReveal);
+    internal void PlayReelStop()                  => PlaySfx(clipReelStop, reelStopFadeInDuration);
+
+    /// <summary>NormalWin for the lowest tier, BigWins for every tier above it.</summary>
+    internal void PlayWin(bool bigWin)
     {
-        PlayUISound(clipPopupOpenClose != null ? clipPopupOpenClose : clipGeneralButtonClick);
+        if (winSource == null) return;
+        if (!_sfxEnabled) return;
+
+        AudioClip clip = bigWin ? clipBigWins : clipNormalWin;
+        if (clip == null) return;
+
+        FadeIn(winSource, clip, SfxTargetVolume, sfxFadeInDuration);
     }
 
-    internal void PlayPopupClose() => PlayPopupOpenClose();
-    internal void PlayPopupOpen()  => PlayPopupOpenClose();
+    internal void StopWin() => FadeOutAndStop(winSource, sfxFadeOutDuration);
 
-    // 9. Autoplay Panel Open Sound
-    internal void PlayAutoplayPanelOpen()
+    /// <summary>One shared loop for all reels. A second call while it is already running is a no-op.</summary>
+    internal void StartReelSpin()
     {
-        PlayUISound(clipAutoplayPanelOpen != null ? clipAutoplayPanelOpen : clipPopupOpenClose);
+        if (reelSpinSource == null || clipReelSpinning == null || !_sfxEnabled) return;
+
+        // Still playing but mid fade-out from the last stop: bring it back up instead of restarting.
+        if (reelSpinSource.isPlaying && reelSpinSource.clip == clipReelSpinning)
+        {
+            FadeVolume(reelSpinSource, SfxTargetVolume, sfxFadeInDuration);
+            return;
+        }
+
+        FadeIn(reelSpinSource, clipReelSpinning, SfxTargetVolume, sfxFadeInDuration);
     }
 
-    // 11. FreeSpin BG (loop while free spin)
-    internal void PlayFreeSpinBg()
-    {
-        if (clipFreeSpinBg == null) return;
-        PlayLoop(bgMusicSource, clipFreeSpinBg);
-    }
+    internal void StopReelSpin() => FadeOutAndStop(reelSpinSource, reelSpinFadeOutDuration);
 
-    // 13. Win Line Phase 1 Start
-    internal void PlayWinLinePhase1Start()
-    {
-        PlayUISound(clipWinLinePhase1Start);
-    }
+    #endregion
 
-    // 14. Slot Reel Column Stop Sound
-    internal void PlayReelStop()
-    {
-        if (!_sfxEnabled || clipReelStop == null) return;
-
-        if (wheelSegmentSource != null)
-            wheelSegmentSource.PlayOneShot(clipReelStop);
-        else
-            PlayUISound(clipReelStop);
-    }
+    #region Focus
 
     private bool isForceMuted = false;
 
@@ -270,4 +341,6 @@ public class AudioManager : MonoBehaviour
     {
         SetMuteAll(isPaused);
     }
+
+    #endregion
 }

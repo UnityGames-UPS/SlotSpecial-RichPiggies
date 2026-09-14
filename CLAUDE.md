@@ -191,10 +191,9 @@ Net-new presentation work, in rough dependency order:
    template's 243-ways symbol-boxing.
 6. Possibly **oversized multi-cell piggy symbols**.
 
-Existing plumbing that partly fits: `JackpotData` / `JackpotValues`, the `jackpot:sync`
-socket event, and `UIManager.UpdateJackpotDisplay()` already carry **grand / major /
-minor / mini**. Rich Piggies needs **six** tiers — **MEGA and MAXI are missing** — and
-needs per-meter *space counts*, not just a cash value string. Extend rather than rebuild.
+The CNY template's platform jackpot ticker (`JackpotValues`, `jackpot:sync`,
+`UIManager.UpdateJackpotDisplay()`) has been removed. The six Yellow jackpot meters live
+in `PigMeterController`.
 
 ---
 
@@ -219,7 +218,7 @@ Best HTTP/SocketIO (Tivadar). Token comes from the hosting page via
 |---|---|---|
 | ← | `game:init` | `InitData` — bets, lines, symbols, feature config, balance |
 | ← | `result` | `ServerSpinResponse` |
-| ← | `balance:sync`, `jackpot:sync`, `AnotherDevice`, `pong` | |
+| ← | `balance:sync`, `AnotherDevice`, `pong` | |
 | → | `request` | `{ type: "SPIN", payload: { betIndex, isFreeSpin } }` ([SocketIOManager.cs:560](Assets/Scripts/BackEnd/SocketIOManager.cs#L560)) |
 | → | `ping` | heartbeat; missed pongs trigger the reconnect popup |
 
@@ -418,9 +417,6 @@ Gaps between the Chinese New Year template and the Rich Piggies spec in §2:
 - **No persistent meters.** Nothing in the client holds per-bet-option state. The Blue
   (free spins), Red (wilds), and Yellow (six jackpot meters) meters are all net-new, and
   must be driven by server state — including their reset points.
-- **Jackpot tiers incomplete.** `JackpotValues` has grand/major/minor/mini; the spec needs
-  **MEGA** and **MAXI** too, plus discrete filled-space counts (6/5/4/3/2/2) rather than a
-  single formatted string.
 - **No multi-cell symbol support.** The spec's "size of the piggies has no effect on
   triggering" implies oversized piggies; `SlotView` draws a fixed 1×1 sprite per cell.
 - **Wrong feature set present.** USpin wheel (`WheelSpinController`), Money Bag pick
