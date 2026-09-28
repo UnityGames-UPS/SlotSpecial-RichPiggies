@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>RichPiggies</title>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: black;
+    }
+
+    #unity-canvas {
+      height: 100%;
+      width: 100%;
+    }
+
+    #loading-screen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <script>
+    const canvas = document.querySelector("#unity-canvas");
+
+    function resizeCanvas() {
+      // visualViewport is the accurate visible area on iOS; fall back to innerWidth/Height.
+      var vv = window.visualViewport;
+      var w = Math.round(vv ? vv.width : window.innerWidth);
+      var h = Math.round(vv ? vv.height : window.innerHeight);
+      window.scrollTo(0, 0);
+      document.documentElement.style.width = w + "px";
+      document.documentElement.style.height = h + "px";
+      document.body.style.width = w + "px";
+      document.body.style.height = h + "px";
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', resizeCanvas);
+      window.visualViewport.addEventListener('scroll', function () { window.scrollTo(0, 0); });
+    }
+    // Scroll-lock: CSS touch-action alone won't stop iOS pinch-pan; non-passive touchmove does.
+    // Unity still receives the touch events (preventDefault only cancels browser scroll/zoom).
+    window.addEventListener('scroll', function () { window.scrollTo(0, 0); }, { passive: true });
+    document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+    document.addEventListener('gesturechange', function (e) { e.preventDefault(); });
+
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/Build.loader.js";
+    var config = {
+      dataUrl: buildUrl + "/Build.data.unityweb",
+      frameworkUrl: buildUrl + "/Build.framework.js.unityweb",
+      codeUrl: buildUrl + "/Build.wasm.unityweb",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "DefaultCompany",
+      productName: "RichPiggies",
+      productVersion: "1.0",
+    };
+
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
+      createUnityInstance(canvas, config, (progress) => {
+      }).then((unityInstance) => {
+      }).catch((message) => {
+        alert(message);
+      });
+    };
+
+    document.body.appendChild(script);
+    window.addEventListener('load', resizeCanvas);
+  </script>
+  <script>
+    window.focus();
+  </script>
+
+</body>
+
+</html>
