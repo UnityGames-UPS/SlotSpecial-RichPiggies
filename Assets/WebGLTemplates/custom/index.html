@@ -37,6 +37,18 @@
   <canvas id="unity-canvas" tabindex="-1"></canvas>
   <script>
     const canvas = document.querySelector("#unity-canvas");
+    var unityInstance = null;   // captured on load; jslib listeners use it as a SendMessage fallback
+    var lastProgressSent = -1;
+
+    // Forward loader progress to the host; loading-complete is signalled by Unity's "OnEnter".
+    function sendProgressToPlatform(progressValue) {
+      var percentage = Math.round(progressValue * 100);
+      if (percentage === lastProgressSent) return;
+      lastProgressSent = percentage;
+      if (window.parent) {
+        window.parent.postMessage({ type: "UnityLoaderProgress", progress: percentage }, "*");
+      }
+    }
 
     function resizeCanvas() {
       // visualViewport is the accurate visible area on iOS; fall back to innerWidth/Height.
@@ -92,7 +104,10 @@
     script.src = loaderUrl;
     script.onload = () => {
       createUnityInstance(canvas, config, (progress) => {
-      }).then((unityInstance) => {
+        sendProgressToPlatform(progress);
+      }).then((instance) => {
+        unityInstance = instance;
+        resizeCanvas();
       }).catch((message) => {
         alert(message);
       });
