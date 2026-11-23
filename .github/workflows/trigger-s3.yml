@@ -8,7 +8,8 @@ on:
 
 jobs:
   call-reusable:
-    uses: UnityGames-UPS/unity-build-pipeline/.github/workflows/main.yml@main
+    uses: UnityGames-UPS/unity-build-pipeline/.github/workflows/br.yml@dev
+    secrets: inherit
     with:
       s3_bucket: unity.build-dev-b2b
       s3_folder: SL-RP
