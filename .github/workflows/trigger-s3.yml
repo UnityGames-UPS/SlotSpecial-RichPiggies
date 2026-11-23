@@ -1,4 +1,3 @@
-
 name: Trigger S3 Upload
 
 on:
@@ -10,10 +9,8 @@ on:
 jobs:
   call-reusable:
     uses: UnityGames-UPS/unity-build-pipeline/.github/workflows/br.yml@main
-    secrets:
-      DISCORD_WEBHOOK_PROD: ${{ secrets.DISCORD_WEBHOOK_PROD }}
+    secrets: inherit
     with:
-      deploy_env: prod
       s3_bucket: unity.build-prod
       s3_folder: SL-RP
       cloudfront_distribution_id: E1SPDAO62CBV8F
