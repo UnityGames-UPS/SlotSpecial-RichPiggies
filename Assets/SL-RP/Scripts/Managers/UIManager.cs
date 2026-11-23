@@ -125,6 +125,7 @@ public class UIManager : MonoBehaviour
 
     [Header("Game Rules Dynamic Texts")]
     [SerializeField] private TMP_Text totalLineCountText;
+    [SerializeField] private TMP_Text totalLineCountTextPortrait;
     [Tooltip("Paytable rows for BusinessPig (id 0).")]
     [SerializeField] private TMP_Text ruleBusinessPigText;
     [Tooltip("Paytable rows for LadyPig (id 1).")]
@@ -1400,6 +1401,10 @@ public class UIManager : MonoBehaviour
         if (totalLineCountText != null)
         {
             totalLineCountText.text = gameManager.gameConfig.paylineCount.ToString();
+        }
+        if (totalLineCountTextPortrait != null)
+        {
+            totalLineCountTextPortrait.text = gameManager.gameConfig.paylineCount.ToString();
         }
 
         if (gameManager.gameConfig.symbols == null) return;

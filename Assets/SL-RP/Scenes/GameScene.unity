@@ -34162,6 +34162,7 @@ MonoBehaviour:
   guideBackButton: {fileID: 1776222427}
   guideOpenButtonPortrait: {fileID: 593848524}
   totalLineCountText: {fileID: 731576410}
+  totalLineCountTextPortrait: {fileID: 760646805}
   ruleBusinessPigText: {fileID: 1238622652}
   ruleLadyPigText: {fileID: 1626461741}
   ruleBeachPigPendantText: {fileID: 17821070}
@@ -47592,7 +47593,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f521a04de7f494272a617b2719edd271, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SocketIOManager
-  testToken: e5b205c67e564ee6b46a60f043d84876
+  testToken: f7428b97cc674df7b50241c68c36d4e7
   gameManager: {fileID: 1206269883}
   uiManager: {fileID: 885496184}
   popupManager: {fileID: 1363796882}
